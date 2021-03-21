@@ -1,25 +1,27 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-from preprocess import *
 from tensorflow.keras.layers import Dense, Input, Concatenate, Lambda
 from tensorflow.keras.models import Model, load_model
 from tensorflow import keras
 import tensorflow.keras.backend as K
 import tensorflow as tf
-import matplotlib.pyplot as plt
 import numpy as np
+import config
 
+"""This file contains all the functions needed to create the Neural Network.
+"""
 
 def build_model():
-    inputsize = 1  # Number of hidden variables, i.e. alpha, beta, gamma
-    depth = 3
-    width = 100
-    outputsize = 2
-    activ = "relu"
-    activ2 = "softmax"
-    """ Build NN for triangle """
-    # Hidden variables as inputs.
-    inputTensor = Input((inputsize+6,))
+    """Build a no-communication model of simulation.
+    """
+    number_of_LHV = config.number_of_LHV  # Number of hidden variables, i.e. alpha, beta, gamma
+    depth = config.party_depth
+    width = config.party_width
+    outputsize = config.party_outputsize
+    activ = config.activation_func
+    activ2 = 'softmax'
+    # 6 numbers (two 3D vectors) plus one hidden variable as inputs.
+    inputTensor = Input((6+number_of_LHV,))
 
     # Group input tensor according to whether alpha, beta or gamma hidden variable.
     group_alpha = Lambda(lambda x: x[:, 0:3], output_shape=((3,)))(inputTensor)
@@ -51,15 +53,17 @@ def build_model():
 
 
 def build_model_comm():
-    inputsize = 1  # Number of hidden variables, i.e. alpha, beta, gamma
-    depth = 3
-    width = 100
-    outputsize = 2
-    activ = "relu"
-    activ2 = "softmax"
-    """ Build NN for triangle """
-    # Hidden variables as inputs.
-    inputTensor = Input((inputsize+6,))
+    """Build a model with one bit of communication between parties.
+    """
+    number_of_LHV = config.number_of_LHV  # Number of hidden variables, i.e. alpha, beta, gamma
+    depth = config.party_depth
+    width = config.party_width
+    outputsize = config.party_outputsize
+    activ = config.activation_func
+    activ2 = 'softmax'
+    activ3 = 'sigmoid'
+    # 6 numbers (two 3D vectors) plus one hidden variable as inputs.
+    inputTensor = Input((6+number_of_LHV,))
 
     # Group input tensor according to whether alpha, beta or gamma hidden variable.
     group_alpha = Lambda(lambda x: x[:, 0:3], output_shape=((3,)))(inputTensor)
@@ -94,12 +98,12 @@ def build_model_comm():
     group_b1 = Dense(outputsize, activation=activ2)(group_b1)
     group_a2 = Dense(outputsize, activation=activ2)(group_a2)
     group_b2 = Dense(outputsize, activation=activ2)(group_b2)
-    group_c = Dense(1, activation='sigmoid')(group_c)
+    group_c = Dense(1, activation=activ3)(group_c)
 
     outputTensor1 = Concatenate()([group_a1, group_b1])
     outputTensor2 = Concatenate()([group_a2, group_b2])
     outputTensor = Lambda(
-        lambda x: x[0] * x[1] + (1 - x[0]) * x[2])([group_c, outputTensor1, outputTensor2])
+        lambda x: x[0] * x[1] + (1.0 - x[0]) * x[2])([group_c, outputTensor1, outputTensor2])
 
     model = Model(inputTensor, outputTensor)
     return model
@@ -116,10 +120,11 @@ def customLoss_distr(y_pred):
     """ Converts the output of the neural network to a probability vector.
     That is from a shape of (batch_size, outputsize + outputsize) to a shape of (outputsize * outputsize,)
     """
-    outputsize = 2
+    outputsize = config.party_outputsize
     a_probs = y_pred[:, 0:outputsize]
     b_probs = y_pred[:, outputsize: outputsize + outputsize]
 
+    # Do an outer product
     a_probs = K.reshape(a_probs, (-1, outputsize, 1))
     b_probs = K.reshape(b_probs, (-1, 1, outputsize))
 
@@ -131,20 +136,20 @@ def customLoss_distr(y_pred):
 
 def customLoss(y_true, y_pred):
     """ Custom loss function."""
-    # Note that y_true is just batch_size copies of the target distributions. So any row could be taken here. We just take 0-th row.
+    # Note that y_true is just LHV_size copies of the target distributions. So any row could be taken here. We just take 0-th row.
     return keras_distance(y_true[0, :], customLoss_distr(y_pred))
 
 
 def customLoss_distr_multiple(y_pred):
     """ Converts the output of the neural network to several probability vectors.
-    That is from a shape of (batch_size, outputsize + outputsize) to a shape of (4, outputsize * outputsize)
+    That is from a shape of (batch_size, outputsize + outputsize) to a shape of (training_size, outputsize * outputsize)
     """
-    outputsize = 2
+    outputsize = config.party_outputsize
+    LHV_size = config.LHV_size
     probs_list = []
-    for i in range(4):
-        a_probs = y_pred[6000*i:6000*(i+1), 0:outputsize]
-        b_probs = y_pred[6000*i:6000 *
-                         (i+1), outputsize: outputsize + outputsize]
+    for i in range(config.training_size):
+        a_probs = y_pred[LHV_size*i:LHV_size*(i+1), 0:outputsize]
+        b_probs = y_pred[LHV_size*i:LHV_size*(i+1), outputsize: outputsize + outputsize]
 
         a_probs = K.reshape(a_probs, (-1, outputsize, 1))
         b_probs = K.reshape(b_probs, (-1, 1, outputsize))
@@ -158,9 +163,9 @@ def customLoss_distr_multiple(y_pred):
 
 def customLoss_multiple(y_true, y_pred):
     """ Custom loss function."""
-    # Note that y_true is just batch_size copies of the target distributions. So any row could be taken here. We just take 0-th row.
+    # Note that y_true is just LHV_size copies of the target distributions. So any row could be taken here. We just take 0-th row.
     probs_list = customLoss_distr_multiple(y_pred)
     loss = 0
-    for i in range(4):
-        loss += keras_distance(y_true[6000*i, :], probs_list[i])
+    for i in range(config.training_size):
+        loss += keras_distance(y_true[config.LHV_size*i, :], probs_list[i])
     return loss
