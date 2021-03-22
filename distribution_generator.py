@@ -140,7 +140,7 @@ def mixed_separable(p=0.5):
     return p * qt.ket2dm(qt.tensor(qt.basis(2, 0), qt.basis(2, 0))) + (1-p) * qt.ket2dm(qt.tensor(qt.basis(2, 1), qt.basis(2, 1)))
 
 
-def generate_werner(n=8, start=0, end=1 ,step=10, a=None, b=None):
+def generate_werner(n=8, start=0, end=1, step=10, a=None, b=None):
     """Generate a series of werner state datasets
     Args:
         n: number of measurements (default 8)
@@ -158,7 +158,7 @@ def generate_werner(n=8, start=0, end=1 ,step=10, a=None, b=None):
         a, b = generate_random_vectors(n)
     for w in np.linspace(start, end, step):
         state = w * bell + (1-w) * iden
-        filename = 'datasets\dataset_werner_state_' + str(count) + '.csv'
+        filename = 'datasets\\dataset_werner_state_' + str(count) + '.csv'
         generate_dataset_from_vectors(state, a, b).to_csv(filename)
         count += 1
 
@@ -179,7 +179,7 @@ def generate_mixed(n=8, start=0, end=1, step=10, a=None, b=None):
         a, b = generate_random_vectors(n)
     for p in np.linspace(start, end, step):
         state = mixed_separable(p=p)
-        filename = 'datasets\dataset_mixed_separable_state_' + \
+        filename = 'datasets\\dataset_mixed_separable_state_' + \
             str(count) + '.csv'
         generate_dataset_from_vectors(state, a, b).to_csv(filename)
         count += 1
@@ -189,15 +189,15 @@ def generate_random_settings(n=8, state_type='max_entangled'):
     """Generate a dataset for n random measurements of a state"""
     if state_type == 'max_entangled':
         state = qt.ket2dm(nme_state(np.pi/4))
-        filename = 'datasets\dataset_maximally_entangled_state.csv'
+        filename = 'datasets\\dataset_maximally_entangled_state.csv'
     elif state_type == 'entangled':
         state = qt.ket2dm(nme_state(np.pi/8))
-        filename = 'datasets\dataset_non_maximally_entangled_pi8_state.csv'
+        filename = 'datasets\\dataset_non_maximally_entangled_pi8_state.csv'
     elif state_type == 'product':
         state = qt.ket2dm(nme_state(0))
-        filename = 'datasets\dataset_product_state.csv'
+        filename = 'datasets\\dataset_product_state.csv'
     elif state_type == 'mixed':
         state = mixed_separable()
-        filename = 'datasets\dataset_mixed_separable_state.csv'
+        filename = 'datasets\\dataset_mixed_separable_state.csv'
     generate_dataset(state, n).to_csv(filename)
     return filename

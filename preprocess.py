@@ -6,6 +6,7 @@ import config
 """This file contains all the functions needed to preprocess the datasets.
 """
 
+
 def open_dataset(filename, limit=None):
     """Opens the csv of state behaviour and returns the inputs and outputs for the Neural Network training
 
@@ -36,9 +37,9 @@ def add_LHV(input_array):
     Returns:
         ndarray: the x_train data with LHV
     """
-    LHV_per_setting=config.LHV_size
+    LHV_per_setting = config.LHV_size
     input_size = input_array.shape[0]
-    input_array = np.repeat(input_array, config.number_of_LHV, axis=0)
+    input_array = np.repeat(input_array, LHV_per_setting, axis=0)
     LHV_list = np.array([random.gauss(0.5, 0.28867) for i in range(
         LHV_per_setting * input_size * config.number_of_LHV)]).reshape(LHV_per_setting * input_size, -1)
     return np.concatenate((input_array, LHV_list), axis=1)

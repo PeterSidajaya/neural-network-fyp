@@ -11,6 +11,7 @@ import config
 """This file contains all the functions needed to create the Neural Network.
 """
 
+
 def build_model():
     """Build a no-communication model of simulation.
     """
@@ -149,7 +150,8 @@ def customLoss_distr_multiple(y_pred):
     probs_list = []
     for i in range(config.training_size):
         a_probs = y_pred[LHV_size*i:LHV_size*(i+1), 0:outputsize]
-        b_probs = y_pred[LHV_size*i:LHV_size*(i+1), outputsize: outputsize + outputsize]
+        b_probs = y_pred[LHV_size*i:LHV_size *
+                         (i+1), outputsize: outputsize + outputsize]
 
         a_probs = K.reshape(a_probs, (-1, outputsize, 1))
         b_probs = K.reshape(b_probs, (-1, 1, outputsize))
@@ -168,4 +170,4 @@ def customLoss_multiple(y_true, y_pred):
     loss = 0
     for i in range(config.training_size):
         loss += keras_distance(y_true[config.LHV_size*i, :], probs_list[i])
-    return loss
+    return loss / config.training_size

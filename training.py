@@ -1,12 +1,15 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-from distribution_generator import generate_random_settings, generate_mixed, generate_werner
-from neural_network_util import build_model, build_model_comm
-from preprocess import open_dataset, add_LHV
-import qutip as qt
-import matplotlib.pyplot as plt
-import tensorflow as tf
 import config
+import tensorflow as tf
+import matplotlib.pyplot as plt
+import qutip as qt
+import pandas as pd
+import numpy as np
+import tensorflow.keras.backend as K
+from preprocess import open_dataset, add_LHV
+from neural_network_util import build_model, build_model_comm, customLoss, customLoss_multiple
+from distribution_generator import generate_random_settings, generate_mixed, generate_werner
 
 
 def train_model(dataset, limit=None):
@@ -22,26 +25,27 @@ def train_model(dataset, limit=None):
 	print("Generating model...")
 	K.clear_session()
 	model = build_model()
-		
+
 	optimizer = config.optimizer
 	model.compile(loss=customLoss_multiple, optimizer=optimizer, metrics=[])
 
 	rng = np.random.default_rng()
 	print("Fitting model...")
 	# Fit model
-	for epoch in range(config.epochs):
-		if training_size < number_of_measurements:			# if training size is the whole data, then no need to shuffle
-			print("Shuffling data")
-			rng.shuffle(data)
+	for epoch in range(config.epochs // config.shuffle_epochs):
+		print("Shuffling data")
+		rng.shuffle(data)
 		x_train = data[:, :6]
 		y_train = data[:, 6:]
 		x_train = add_LHV(x_train)                       	# Add the LHV
-		y_train = np.repeat(y_train, LHV_size, axis=0)		# To match the size of the inputs
+		# To match the size of the inputs
+		y_train = np.repeat(y_train, LHV_size, axis=0)
 		history = model.fit(x_train, y_train, batch_size=training_size*LHV_size,
-							epochs=1, verbose=1, shuffle=False)
-		if history.history['loss'][-1] < 1e-3:          	# Cutoff at 1e-3
+							epochs=config.shuffle_epochs, verbose=1, shuffle=False)
+		if history.history['loss'][-1] < config.cutoff:          	# Cutoff at 1e-4
 			break
-	score = model.evaluate(x=x_train, y=y_train, batch_size=data.shape[0]*LHV_size)
+	score = model.evaluate(x=x_train, y=y_train,
+	                       batch_size=data.shape[0]*LHV_size)
 	return min(score, min(history.history['loss']))
 
 
@@ -65,19 +69,20 @@ def train_model_comm(dataset, limit=None):
 	rng = np.random.default_rng()
 	print("Fitting model...")
 	# Fit model
-	for epoch in range(config.epochs):
-		if training_size < number_of_measurements:			# if training size is the whole data, then no need to shuffle
-			print("Shuffling data")
-			rng.shuffle(data)
+	for epoch in range(config.epochs // config.shuffle_epochs):
+		print("Shuffling data")
+		rng.shuffle(data)
 		x_train = data[:, :6]
 		y_train = data[:, 6:]
 		x_train = add_LHV(x_train)                       	# Add the LHV
-		y_train = np.repeat(y_train, LHV_size, axis=0)		# To match the size of the inputs
+		# To match the size of the inputs
+		y_train = np.repeat(y_train, LHV_size, axis=0)
 		history = model.fit(x_train, y_train, batch_size=training_size*LHV_size,
-							epochs=1, verbose=1, shuffle=False)
-		if history.history['loss'][-1] < 1e-3:          	# Cutoff at 1e-3
+							epochs=config.shuffle_epochs, verbose=1, shuffle=False)
+		if history.history['loss'][-1] < config.cutoff:          	# Cutoff at 1e-4
 			break
-	score = model.evaluate(x=x_train, y=y_train, batch_size=data.shape[0]*LHV_size)
+	score = model.evaluate(x=x_train, y=y_train,
+	                       batch_size=data.shape[0]*LHV_size)
 	return min(score, min(history.history['loss']))
 
 
@@ -109,19 +114,19 @@ def mixed_run(n=4, start=0, end=1, step=10, a=CHSH_measurements()[0], b=CHSH_mea
 		print('Generating mixed state datasets...')
 		generate_mixed(n=n, start=start, end=end, step=step, a=a, b=b)
 		print('Finished generating, starting training...')
-	config.training_size = n 		# to do batch optimization
+	# config.training_size = n 		# to do batch optimization
 	w_array = []
 	loss_array = []
 	count = 0
-	for w in np.linspace(0, 1, step):
+	for w in np.linspace(start, end, step):
 		print('Step {} out of {}'.format(count+1, step))
-		filename = 'datasets\dataset_mixed_separable_state_' + str(count) + '.csv'
+		filename = 'datasets\\dataset_mixed_separable_state_' + str(count) + '.csv'
 		w_array.append(w)
 		loss_array.append(train_model(filename))
 		count += 1
 	print('Enter filename (without .csv): ')
 	savename = input()
-	df = pd.DataFrame({'mixing_parameter': w_array, 'loss': min_loss})
+	df = pd.DataFrame({'mixing_parameter': w_array, 'loss': loss_array})
 	df.to_csv(savename + '.csv')
 
 
@@ -140,13 +145,13 @@ def werner_run(n=4, start=0, end=1, step=10, a=CHSH_measurements()[0], b=CHSH_me
 		print('Generating werner state datasets...')
 		generate_werner(n=n, start=start, end=end, step=step, a=a, b=b)
 		print('Finished generating, starting training...')
-	config.training_size = n 		# to do batch optimization
+	# config.training_size = n 		# to do batch optimization
 	w_array = []
 	loss_array = []
 	count = 0
-	for w in np.linspace(0, 1, step):
+	for w in np.linspace(start, end, step):
 		print('Step {} out of {}'.format(count+1, step))
-		filename = 'datasets\dataset_werner_state_' + str(count) + '.csv'
+		filename = 'datasets\\dataset_werner_state_' + str(count) + '.csv'
 		w_array.append(w)
 		loss_array.append(train_model(filename))
 		count += 1
@@ -164,22 +169,22 @@ def communication_test(start=4, end=100, step=5, state_type='max_entangled'):
 		step: number of steps to take (default 5)
 		state_type: the type of state (default 'max_entangled')
 	"""
-    print('Generating datasets for communication test...')
-    filename = generate_random_settings(n=end, state_type=state_type)
-    print('Finished generating, starting training...')
-    n_array = []
-    loss_array = []
-    loss_array_comm = []
-    count = 0
-    for number_of_measurements in np.linspace(start, end, step):
-        print('Step {} out of {}'.format(count+1, step))
-        config.training_size = number_of_measurements		# to do batch optimization
-        n_array.append(number_of_measurements)
-        print('Without communication')
-        loss_array.append(train_model(filename, limit=number_of_measurements))
-        print('With communication')
-        loss_array_comm.append(train_model_comm(filename, limit=number_of_measurements))
-        count += 1
+	print('Generating datasets for communication test...')
+	filename = generate_random_settings(n=end, state_type=state_type)
+	print('Finished generating, starting training...')
+	n_array = []
+	loss_array = []
+	loss_array_comm = []
+	count = 0
+	for number_of_measurements in np.linspace(start, end, step):
+		print('Step {} out of {}'.format(count+1, step))
+		config.training_size = number_of_measurements		# to do batch optimization
+		n_array.append(number_of_measurements)
+		print('Without communication')
+		loss_array.append(train_model(filename, limit=number_of_measurements))
+		print('With communication')
+		loss_array_comm.append(train_model_comm(filename, limit=number_of_measurements))
+		count += 1
 	print('Enter filename (without .csv): ')
 	savename = input()
 	df = pd.DataFrame({'number_of_measurements': number_of_measurements,
@@ -188,6 +193,15 @@ def communication_test(start=4, end=100, step=5, state_type='max_entangled'):
 	df.to_csv(savename + '.csv')
 
 
-# Will run the werner test
+# Will run the mixed run and werner test
+config.training_size = 16
+config.shuffle_epochs = 5
+config.cutoff = 1e-3
+mixed_run(n=256, start=0, end=1, step=11, a=None, b=None, generate_new=True)
+
+config.training_size = 4
+config.shuffle_epochs = 100
+config.cutoff = 1e-4
 a, b = CHSH_measurements()
-werner_run(n=4, start=0, end=1, step=10, a=a, b=b)
+werner_run(n=4, start=0, end=1, step=15, a=a, b=b, generate_new=True)
+werner_run(n=4, start=0.6, end=0.8, step=15, a=a, b=b, generate_new=True)
