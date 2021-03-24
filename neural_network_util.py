@@ -1,12 +1,12 @@
+import config
+import numpy as np
+import tensorflow as tf
+import tensorflow.keras.backend as K
+from tensorflow import keras
+from tensorflow.keras.models import Model, load_model
+from tensorflow.keras.layers import Dense, Input, Concatenate, Lambda
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-from tensorflow.keras.layers import Dense, Input, Concatenate, Lambda
-from tensorflow.keras.models import Model, load_model
-from tensorflow import keras
-import tensorflow.keras.backend as K
-import tensorflow as tf
-import numpy as np
-import config
 
 """This file contains all the functions needed to create the Neural Network.
 """

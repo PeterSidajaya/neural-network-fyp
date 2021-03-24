@@ -1,6 +1,6 @@
+import tensorflow as tf
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-import tensorflow as tf
 
 
 LHV_size = 6000		    # number of LHV for evaluation
@@ -15,4 +15,5 @@ activation_func = 'relu'    # activation function for NN
 optimizer = tf.keras.optimizers.Adam()		# just use Adam
 epochs = 600								# should be enough
 shuffle_epochs = 100                        # number of epochs before shuffling
-cutoff = 1e-4                               # cutoff training when loss dips below this value
+# cutoff training when loss dips below this value
+cutoff = 1e-4

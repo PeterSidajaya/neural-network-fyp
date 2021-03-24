@@ -201,3 +201,53 @@ def generate_random_settings(n=8, state_type='max_entangled'):
         filename = 'datasets\\dataset_mixed_separable_state.csv'
     generate_dataset(state, n).to_csv(filename)
     return filename
+
+
+def CHSH_measurements():
+    """Generate vectors for CHSH measurements
+    """
+    vec_1 = [0, 0, 1]
+    vec_2 = [1, 0, 0]
+    vec_3 = [1/np.sqrt(2), 0, 1/np.sqrt(2)]
+    vec_4 = [-1/np.sqrt(2), 0, 1/np.sqrt(2)]
+
+    a = [vec_1, vec_1, vec_2, vec_2]
+    b = [vec_3, vec_4, vec_3, vec_4]
+    return (a, b)
+
+
+def CHSH_measurements_extended():
+    """Generate vectors for CHSH measurements
+    """
+    vec_a1 = [0, 0, 1]
+    vec_a2 = [1, 0, 0]
+    vec_b1 = [1/np.sqrt(2), 0, 1/np.sqrt(2)]
+    vec_b2 = [-1/np.sqrt(2), 0, 1/np.sqrt(2)]
+
+    vec_a3 = [0, 0, 1]
+    vec_a4 = [0, 1, 0]
+    vec_b3 = [0, 1/np.sqrt(2), 1/np.sqrt(2)]
+    vec_b4 = [0, -1/np.sqrt(2), 1/np.sqrt(2)]
+
+    a = [vec_a1, vec_a1, vec_a2, vec_a2, vec_a3, vec_a3, vec_a4, vec_a4]
+    b = [vec_b1, vec_b2, vec_b1, vec_b2, vec_b3, vec_b4, vec_b3, vec_b4]
+    return (a, b)
+
+
+def maximum_violation_measurements(theta):
+    """Generate 8 pairs of maximally nonlocal measurements
+    """
+    kai = np.arccos(1/np.sqrt(1+np.sin(2*theta)**2))
+    vec_a1 = [0, 0, 1]
+    vec_a2 = [1, 0, 0]
+    vec_b1 = np.cos(kai) * vec_a1 + np.sin(kai) * vec_a2
+    vec_b2 = np.cos(kai) * vec_a1 - np.sin(kai) * vec_a2
+
+    vec_a3 = [0, 0, 1]
+    vec_a4 = [0, 1, 0]
+    vec_b3 = np.cos(kai) * vec_a3 + np.sin(kai) * vec_a4
+    vec_b4 = np.cos(kai) * vec_a3 - np.sin(kai) * vec_a4
+
+    a = [vec_a1, vec_a1, vec_a2, vec_a2, vec_a3, vec_a3, vec_a4, vec_a4]
+    b = [vec_b1, vec_b2, vec_b1, vec_b2, vec_b3, vec_b4, vec_b3, vec_b4]
+    return (a, b)
