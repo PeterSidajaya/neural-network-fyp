@@ -30,7 +30,3 @@ def plot_dataset(filename, xlabel='X axis', ylabel='Y axis', title='Title'):
     plt.xlabel(xlabel, fontsize=12)
     plt.ylabel(ylabel, fontsize=12)
     plt.show()
-
-
-plot_dataset('werner_result_with_comm.csv', xlabel='Werner parameter',
-             ylabel='Relative entropy', title='Werner state loss')
