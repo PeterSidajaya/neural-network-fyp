@@ -5,11 +5,12 @@ import seaborn as sns
 import qutip as qt
 
 
-def plot_measurements(vector_alice_list, vector_bob_list):
+def plot_measurements(vector_alice_list, vector_bob_list, color=True):
     num = len(vector_alice_list)
     b = qt.Bloch()
-    b.vector_color = list(map(lambda x: x.rgb, list(
-        Color('red').range_to(Color('purple'), num))))
+    if color:
+        b.vector_color = list(map(lambda x: x.rgb, list(
+            Color('red').range_to(Color('purple'), num))))
     for i in range(num):
         vector_alice = vector_alice_list[i]
         vector_bob = vector_bob_list[i]

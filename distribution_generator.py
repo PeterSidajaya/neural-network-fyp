@@ -203,6 +203,19 @@ def generate_random_settings(n=8, state_type='max_entangled'):
     return filename
 
 
+def generate_for_comm_test(n=8, state_type='max_entangled'):
+    if state_type == 'max_entangled':
+        state = qt.ket2dm(nme_state(np.pi/4))
+        filename = 'datasets\\dataset_maximally_entangled_state.csv'
+        a, b = maximum_violation_measurements_extended(np.pi/4, n=n)
+    elif state_type == 'entangled':
+        state = qt.ket2dm(nme_state(np.pi/8))
+        filename = 'datasets\\dataset_non_maximally_entangled_pi8_state.csv'
+        a, b = maximum_violation_measurements_extended(np.pi/8, n=n)
+    generate_dataset_from_vectors(state, a, b).to_csv(filename)
+    return filename
+
+
 def CHSH_measurements():
     """Generate vectors for CHSH measurements
     """
@@ -224,10 +237,10 @@ def CHSH_measurements_extended():
     vec_b1 = [1/np.sqrt(2), 0, 1/np.sqrt(2)]
     vec_b2 = [-1/np.sqrt(2), 0, 1/np.sqrt(2)]
 
-    vec_a3 = [0, 0, 1]
+    vec_a3 = [0, 0, -1]
     vec_a4 = [0, 1, 0]
-    vec_b3 = [0, 1/np.sqrt(2), 1/np.sqrt(2)]
-    vec_b4 = [0, -1/np.sqrt(2), 1/np.sqrt(2)]
+    vec_b3 = [0, 1/np.sqrt(2), -1/np.sqrt(2)]
+    vec_b4 = [0, -1/np.sqrt(2), -1/np.sqrt(2)]
 
     a = [vec_a1, vec_a1, vec_a2, vec_a2, vec_a3, vec_a3, vec_a4, vec_a4]
     b = [vec_b1, vec_b2, vec_b1, vec_b2, vec_b3, vec_b4, vec_b3, vec_b4]
@@ -240,14 +253,27 @@ def maximum_violation_measurements(theta):
     kai = np.arccos(1/np.sqrt(1+np.sin(2*theta)**2))
     vec_a1 = [0, 0, 1]
     vec_a2 = [1, 0, 0]
-    vec_b1 = np.cos(kai) * vec_a1 + np.sin(kai) * vec_a2
-    vec_b2 = np.cos(kai) * vec_a1 - np.sin(kai) * vec_a2
+    vec_b1 = np.multiply(np.cos(kai), vec_a1) + \
+        np.multiply(np.sin(kai), vec_a2)
+    vec_b2 = np.multiply(np.cos(kai), vec_a1) - \
+        np.multiply(np.sin(kai), vec_a2)
 
-    vec_a3 = [0, 0, 1]
+    vec_a3 = [0, 0, -1]
     vec_a4 = [0, 1, 0]
-    vec_b3 = np.cos(kai) * vec_a3 + np.sin(kai) * vec_a4
-    vec_b4 = np.cos(kai) * vec_a3 - np.sin(kai) * vec_a4
+    vec_b3 = np.multiply(np.cos(kai), vec_a3) + \
+        np.multiply(np.sin(kai), vec_a4)
+    vec_b4 = np.multiply(np.cos(kai), vec_a3) - \
+        np.multiply(np.sin(kai), vec_a4)
 
     a = [vec_a1, vec_a1, vec_a2, vec_a2, vec_a3, vec_a3, vec_a4, vec_a4]
     b = [vec_b1, vec_b2, vec_b1, vec_b2, vec_b3, vec_b4, vec_b3, vec_b4]
     return (a, b)
+
+
+def maximum_violation_measurements_extended(theta, n=8):
+    (vec_alice, vec_bob) = maximum_violation_measurements(theta)
+    n_add = n-8
+    (vec_alice_add, vec_bob_add) = generate_random_vectors(n_add)
+    vec_alice += vec_alice_add
+    vec_bob += vec_bob_add
+    return (vec_alice, vec_bob)

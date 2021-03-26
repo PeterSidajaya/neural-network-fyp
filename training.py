@@ -1,4 +1,4 @@
-from distribution_generator import generate_random_settings, generate_mixed, generate_werner, CHSH_measurements, maximum_violation_measurements
+from distribution_generator import generate_dataset_from_vectors, generate_for_comm_test, generate_random_settings, generate_mixed, generate_werner, CHSH_measurements, maximum_violation_measurements
 from neural_network_util import build_model, build_model_comm, customLoss, customLoss_multiple
 from preprocess import open_dataset, add_LHV
 import tensorflow.keras.backend as K
@@ -97,6 +97,8 @@ def mixed_run(n=4, start=0, end=1, step=10, a=CHSH_measurements()[0], b=CHSH_mea
             b: optional list of vectors to be used as the measurement for Bob (default CHSH)
             generate_new: set to False if you do not want to generate new data
     """
+    if a or b:
+        n = len(a)
     if generate_new:
         print('Generating mixed state datasets...')
         generate_mixed(n=n, start=start, end=end, step=step, a=a, b=b)
@@ -130,6 +132,8 @@ def werner_run(n=4, start=0, end=1, step=10, a=CHSH_measurements()[0], b=CHSH_me
             comm: whether to allow communication or not (default False)
             generate_new: set to False if you do not want to generate new data
     """
+    if a or b:
+        n = len(a)
     if generate_new:
         print('Generating werner state datasets...')
         generate_werner(n=n, start=start, end=end, step=step, a=a, b=b)
@@ -153,7 +157,7 @@ def werner_run(n=4, start=0, end=1, step=10, a=CHSH_measurements()[0], b=CHSH_me
     df.to_csv(savename + '.csv')
 
 
-def communication_test(start=4, end=20, step=5, state_type='max_entangled'):
+def communication_test(start=8, end=20, step=5, state_type='max_entangled'):
     """Compare the model with communication and without for a given state, for different number of measurement settings.
     Keywords arguments:
             start: starting number of measurements (default 4)
@@ -162,7 +166,7 @@ def communication_test(start=4, end=20, step=5, state_type='max_entangled'):
             state_type: the type of state (default 'max_entangled')
     """
     print('Generating datasets for communication test...')
-    filename = generate_random_settings(n=end, state_type=state_type)
+    filename = generate_for_comm_test(n=end, state_type=state_type)
     print('Finished generating, starting training...')
     n_array = []
     loss_array = []
@@ -171,8 +175,7 @@ def communication_test(start=4, end=20, step=5, state_type='max_entangled'):
     for number_of_measurements in np.linspace(start, end, step):
         number_of_measurements = int(number_of_measurements)
         print('Step {} out of {}'.format(count+1, step))
-        config.training_size = number_of_measurements		# to do batch optimization
-        config.shuffle_epochs = 600							# no need of shuffling for batch optimization
+        config.training_size = number_of_measurements		# to do batch gradient descent
         n_array.append(number_of_measurements)
         print('Without communication')
         loss_array.append(train_model(filename, limit=number_of_measurements))
