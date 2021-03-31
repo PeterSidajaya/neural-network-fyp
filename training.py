@@ -34,6 +34,8 @@ def train_model(dataset, limit=None):
     # Fit model
     for epoch in range(config.epochs // config.shuffle_epochs):
         print("Shuffling data")
+        print("Shuffle ", epoch, " out of ",
+              config.epochs // config.shuffle_epochs)
         rng.shuffle(data)
         x_train = data[:, :6]
         y_train = data[:, 6:]
@@ -71,6 +73,8 @@ def train_model_comm(dataset, limit=None):
     # Fit model
     for epoch in range(config.epochs // config.shuffle_epochs):
         print("Shuffling data")
+        print("Shuffle ", epoch, " out of ",
+              config.epochs // config.shuffle_epochs)
         rng.shuffle(data)
         x_train = data[:, :6]
         y_train = data[:, 6:]
@@ -84,6 +88,88 @@ def train_model_comm(dataset, limit=None):
     score = model.evaluate(x=x_train, y=y_train,
                            batch_size=data.shape[0]*LHV_size)
     return min(score, min(history.history['loss']))
+
+
+def train_model_history(dataset, limit=None):
+    """Train a no-communication model
+    """
+    print("Starting training...")
+    x, y = open_dataset(dataset, limit=limit)
+    data = np.concatenate((x, y), axis=1)
+    LHV_size = config.LHV_size
+    training_size = config.training_size
+    number_of_measurements = data.shape[0]
+
+    print("Generating model...")
+    K.clear_session()
+    model = build_model()
+
+    optimizer = config.optimizer
+    model.compile(loss=customLoss_multiple, optimizer=optimizer, metrics=[])
+    loss_history = []
+
+    rng = np.random.default_rng()
+    print("Fitting model...")
+    # Fit model
+    for epoch in range(config.epochs // config.shuffle_epochs):
+        print("Shuffling data")
+        print("Shuffle ", epoch, " out of ",
+              config.epochs // config.shuffle_epochs)
+        rng.shuffle(data)
+        x_train = data[:, :6]
+        y_train = data[:, 6:]
+        x_train = add_LHV(x_train)                       	# Add the LHV
+        # To match the size of the inputs
+        y_train = np.repeat(y_train, LHV_size, axis=0)
+        history = model.fit(x_train, y_train, batch_size=training_size*LHV_size,
+                            epochs=config.shuffle_epochs, verbose=1, shuffle=False)
+        loss_history += history.history['loss']
+        if history.history['loss'][-1] < config.cutoff:          	# Cutoff at 1e-4
+            break
+    score = model.evaluate(x=x_train, y=y_train,
+                           batch_size=data.shape[0]*LHV_size)
+    return (min(score, min(history.history['loss'])), loss_history)
+
+
+def train_model_comm_history(dataset, limit=None):
+    """Train a communication model
+    """
+    print("Starting training (with communication)...")
+    x, y = open_dataset(dataset, limit=limit)
+    data = np.concatenate((x, y), axis=1)
+    LHV_size = config.LHV_size
+    training_size = config.training_size
+    number_of_measurements = data.shape[0]
+
+    print("Generating model...")
+    K.clear_session()
+    model = build_model_comm()
+
+    optimizer = config.optimizer
+    model.compile(loss=customLoss_multiple, optimizer=optimizer, metrics=[])
+    loss_history = []
+
+    rng = np.random.default_rng()
+    print("Fitting model...")
+    # Fit model
+    for epoch in range(config.epochs // config.shuffle_epochs):
+        print("Shuffling data")
+        print("Shuffle ", epoch, " out of ",
+              config.epochs // config.shuffle_epochs)
+        rng.shuffle(data)
+        x_train = data[:, :6]
+        y_train = data[:, 6:]
+        x_train = add_LHV(x_train)                       	# Add the LHV
+        # To match the size of the inputs
+        y_train = np.repeat(y_train, LHV_size, axis=0)
+        history = model.fit(x_train, y_train, batch_size=training_size*LHV_size,
+                            epochs=config.shuffle_epochs, verbose=1, shuffle=False)
+        loss_history += history.history['loss']
+        if history.history['loss'][-1] < config.cutoff:          	# Cutoff at 1e-4
+            break
+    score = model.evaluate(x=x_train, y=y_train,
+                           batch_size=data.shape[0]*LHV_size)
+    return (min(score, min(history.history['loss'])), loss_history)
 
 
 def mixed_run(n=4, start=0, end=1, step=10, a=CHSH_measurements()[0], b=CHSH_measurements()[1], generate_new=True):
@@ -138,7 +224,7 @@ def werner_run(n=4, start=0, end=1, step=10, a=CHSH_measurements()[0], b=CHSH_me
         print('Generating werner state datasets...')
         generate_werner(n=n, start=start, end=end, step=step, a=a, b=b)
         print('Finished generating, starting training...')
-    # config.training_size = n 		# to do batch optimization
+    config.training_size = n 		# to do batch optimization
     w_array = []
     loss_array = []
     count = 0
@@ -157,7 +243,7 @@ def werner_run(n=4, start=0, end=1, step=10, a=CHSH_measurements()[0], b=CHSH_me
     df.to_csv(savename + '.csv')
 
 
-def communication_test(start=8, end=20, step=5, state_type='max_entangled'):
+def communication_test(start=8, end=20, step=5, state_type='max_entangled', generate_new=True):
     """Compare the model with communication and without for a given state, for different number of measurement settings.
     Keywords arguments:
             start: starting number of measurements (default 4)
@@ -166,22 +252,28 @@ def communication_test(start=8, end=20, step=5, state_type='max_entangled'):
             state_type: the type of state (default 'max_entangled')
     """
     print('Generating datasets for communication test...')
-    filename = generate_for_comm_test(n=end, state_type=state_type)
+    filename = generate_for_comm_test(
+        n=end, state_type=state_type, generate_new=generate_new)
     print('Finished generating, starting training...')
     n_array = []
     loss_array = []
     loss_array_comm = []
     count = 0
-    for number_of_measurements in np.linspace(start, end, step):
+    for number_of_measurements in np.linspace(start, end, step)[::-1]:
         number_of_measurements = int(number_of_measurements)
+        print('Measurements:', number_of_measurements)
         print('Step {} out of {}'.format(count+1, step))
         config.training_size = number_of_measurements		# to do batch gradient descent
         n_array.append(number_of_measurements)
-        print('Without communication')
-        loss_array.append(train_model(filename, limit=number_of_measurements))
+
         print('With communication')
         loss_array_comm.append(train_model_comm(
             filename, limit=number_of_measurements))
+        K.clear_session()
+        print('Without communication')
+        loss_array.append(train_model(filename, limit=number_of_measurements))
+        K.clear_session()
+
         count += 1
     print('Enter filename (without .csv): ')
     savename = input()

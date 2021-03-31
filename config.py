@@ -12,8 +12,8 @@ party_depth = 3	    		# depth of NN
 party_outputsize = 2		# size of output
 activation_func = 'relu'    # activation function for NN
 
-optimizer = tf.keras.optimizers.Adam()		# just use Adam
-epochs = 600								# should be enough
+optimizer = tf.keras.optimizers.Nadam()		# just use Nadam
+epochs = 1200								# should be enough
 shuffle_epochs = 100                        # number of epochs before shuffling
 # cutoff training when loss dips below this value
 cutoff = 1e-4

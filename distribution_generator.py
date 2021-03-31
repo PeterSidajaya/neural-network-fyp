@@ -203,7 +203,7 @@ def generate_random_settings(n=8, state_type='max_entangled'):
     return filename
 
 
-def generate_for_comm_test(n=8, state_type='max_entangled'):
+def generate_for_comm_test(n=8, state_type='max_entangled', generate_new=True):
     if state_type == 'max_entangled':
         state = qt.ket2dm(nme_state(np.pi/4))
         filename = 'datasets\\dataset_maximally_entangled_state.csv'
@@ -212,6 +212,9 @@ def generate_for_comm_test(n=8, state_type='max_entangled'):
         state = qt.ket2dm(nme_state(np.pi/8))
         filename = 'datasets\\dataset_non_maximally_entangled_pi8_state.csv'
         a, b = maximum_violation_measurements_extended(np.pi/8, n=n)
+    if not generate_new:
+        print("NOT GENERATING NEW DATA")
+        return filename
     generate_dataset_from_vectors(state, a, b).to_csv(filename)
     return filename
 
