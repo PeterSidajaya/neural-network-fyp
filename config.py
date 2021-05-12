@@ -1,16 +1,20 @@
 import tensorflow as tf
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+"""
+This file contains all the settings and hyperparameters to be used for the neural network.
+"""
 
 
 LHV_size = 6000		    # number of LHV for evaluation
 training_size = 4		# number of measurement settings for one training step
 number_of_LHV = 1		# number of LHV (one means a single number)
 
-party_width = 50			# width of NN
-party_depth = 3	    		# depth of NN
-party_outputsize = 2		# size of output
-activation_func = 'relu'    # activation function for NN
+party_width = 50			        # width of NN
+party_depth = 3	    		        # depth of NN
+party_outputsize = 2		        # size of output
+activation_func = 'relu'            # activation function for NN
+# activation function for the final layer of the comm part
+activation_func_comm = 'sigmoid'
 
 optimizer = tf.keras.optimizers.Nadam()		# just use Nadam
 epochs = 1200								# should be enough

@@ -1,5 +1,5 @@
 from distribution_generator import generate_dataset_from_vectors, generate_for_comm_test, generate_random_settings, generate_mixed, generate_werner, CHSH_measurements, maximum_violation_measurements
-from neural_network_util import build_model, build_model_comm, customLoss, customLoss_multiple
+from neural_network_util import build_model, build_model_comm, customLoss_multiple, comm_customLoss_multiple
 from preprocess import open_dataset, add_LHV
 import tensorflow.keras.backend as K
 import numpy as np
@@ -8,8 +8,6 @@ import qutip as qt
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import config
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 
 def train_model(dataset, limit=None):
@@ -44,7 +42,7 @@ def train_model(dataset, limit=None):
         y_train = np.repeat(y_train, LHV_size, axis=0)
         history = model.fit(x_train, y_train, batch_size=training_size*LHV_size,
                             epochs=config.shuffle_epochs, verbose=1, shuffle=False)
-        if history.history['loss'][-1] < config.cutoff:          	# Cutoff at 1e-4
+        if min(history.history['loss']) < config.cutoff:          	# Cutoff at 1e-4
             break
     score = model.evaluate(x=x_train, y=y_train,
                            batch_size=data.shape[0]*LHV_size)
@@ -66,14 +64,14 @@ def train_model_comm(dataset, limit=None):
     model = build_model_comm()
 
     optimizer = config.optimizer
-    model.compile(loss=customLoss_multiple, optimizer=optimizer, metrics=[])
+    model.compile(loss=comm_customLoss_multiple, optimizer=optimizer, metrics=[])
 
     rng = np.random.default_rng()
     print("Fitting model...")
     # Fit model
     for epoch in range(config.epochs // config.shuffle_epochs):
         print("Shuffling data")
-        print("Shuffle ", epoch, " out of ",
+        print("Shuffle ", epoch + 1, " out of ",
               config.epochs // config.shuffle_epochs)
         rng.shuffle(data)
         x_train = data[:, :6]
@@ -83,7 +81,7 @@ def train_model_comm(dataset, limit=None):
         y_train = np.repeat(y_train, LHV_size, axis=0)
         history = model.fit(x_train, y_train, batch_size=training_size*LHV_size,
                             epochs=config.shuffle_epochs, verbose=1, shuffle=False)
-        if history.history['loss'][-1] < config.cutoff:          	# Cutoff at 1e-4
+        if min(history.history['loss']) < config.cutoff:          	# Cutoff at 1e-4
             break
     score = model.evaluate(x=x_train, y=y_train,
                            batch_size=data.shape[0]*LHV_size)
@@ -124,7 +122,7 @@ def train_model_history(dataset, limit=None):
         history = model.fit(x_train, y_train, batch_size=training_size*LHV_size,
                             epochs=config.shuffle_epochs, verbose=1, shuffle=False)
         loss_history += history.history['loss']
-        if history.history['loss'][-1] < config.cutoff:          	# Cutoff at 1e-4
+        if min(history.history['loss']) < config.cutoff:          	# Cutoff at 1e-4
             break
     score = model.evaluate(x=x_train, y=y_train,
                            batch_size=data.shape[0]*LHV_size)
@@ -146,7 +144,7 @@ def train_model_comm_history(dataset, limit=None):
     model = build_model_comm()
 
     optimizer = config.optimizer
-    model.compile(loss=customLoss_multiple, optimizer=optimizer, metrics=[])
+    model.compile(loss=comm_customLoss_multiple, optimizer=optimizer, metrics=[])
     loss_history = []
 
     rng = np.random.default_rng()
@@ -154,7 +152,7 @@ def train_model_comm_history(dataset, limit=None):
     # Fit model
     for epoch in range(config.epochs // config.shuffle_epochs):
         print("Shuffling data")
-        print("Shuffle ", epoch, " out of ",
+        print("Shuffle ", epoch + 1, " out of ",
               config.epochs // config.shuffle_epochs)
         rng.shuffle(data)
         x_train = data[:, :6]
@@ -165,7 +163,7 @@ def train_model_comm_history(dataset, limit=None):
         history = model.fit(x_train, y_train, batch_size=training_size*LHV_size,
                             epochs=config.shuffle_epochs, verbose=1, shuffle=False)
         loss_history += history.history['loss']
-        if history.history['loss'][-1] < config.cutoff:          	# Cutoff at 1e-4
+        if min(history.history['loss']) < config.cutoff:          	# Cutoff at 1e-4
             break
     score = model.evaluate(x=x_train, y=y_train,
                            batch_size=data.shape[0]*LHV_size)

@@ -6,11 +6,11 @@ import os
 import sys
 import getopt
 
-"""This file contains the functions needed to create the datasets.
-"""
+"""This file contains the functions needed to create the datasets."""
 
 
 def random_vector(n):
+    """Generate a random vector of n dimensions."""
     components = [np.random.normal() for i in range(n)]
     r = math.sqrt(sum(x*x for x in components))
     v = [x/r for x in components]
@@ -18,6 +18,7 @@ def random_vector(n):
 
 
 def operator_dot(vector):
+    """Calculate the dot product of a vector with the Pauli matrices vector."""
     return vector[0] * qt.sigmax() + vector[1] * qt.sigmay() + vector[2] * qt.sigmaz()
 
 
@@ -34,6 +35,7 @@ def probability(state, vector_a, vector_b):
 
 
 def generate_random_vectors(n):
+    """Generate a list of random 3D unit vectors."""
     a, b = [], []
     for i in range(n):
         vector_a = random_vector(3)
@@ -44,7 +46,7 @@ def generate_random_vectors(n):
 
 
 def generate_dataset(state, n):
-    """Generate a dataset for the training of the NN
+    """Generate a dataset for the training of the NN by generating n random unit vectors.
 
     Args:
         state (qt.dm): The two-qubits entangled state
@@ -104,6 +106,16 @@ def generate_dataset(state, n):
 
 
 def generate_dataset_from_vectors(state, a, b):
+    """Generate a dataset for the training of the NN from a list of vectors.
+
+    Args:
+        state (qt.dm): The two-qubits entangled state.
+        a (list): A list of 3D unit vectors.
+        b (list): A list of 3D unit vectors. Must be of the same size as a.
+
+    Returns:
+        dataframe: A dataframe with the a and b input vectors, output A and B, and the respective probabilities
+    """
     p = []
     for i in range(len(a)):
         vec_a = a[i]
@@ -130,13 +142,14 @@ def generate_dataset_from_vectors(state, a, b):
 
 
 def nme_state(theta):
-    """Generate a non-maximally entangled state defined by cos(theta)|00> + sin(theta)|11>."""
+    """Generate a non-maximally entangled ket state defined by cos(theta)|00> + sin(theta)|11>."""
     a = np.cos(theta)
     b = np.sin(theta)
     return a * qt.tensor(qt.basis(2, 0), qt.basis(2, 0)) + b * qt.tensor(qt.basis(2, 1), qt.basis(2, 1))
 
 
 def mixed_separable(p=0.5):
+    """Generate a mixed separable density matrix defined by p|00><00| + (1-p)|11><11|."""
     return p * qt.ket2dm(qt.tensor(qt.basis(2, 0), qt.basis(2, 0))) + (1-p) * qt.ket2dm(qt.tensor(qt.basis(2, 1), qt.basis(2, 1)))
 
 
@@ -204,6 +217,17 @@ def generate_random_settings(n=8, state_type='max_entangled'):
 
 
 def generate_for_comm_test(n=8, state_type='max_entangled', generate_new=True):
+    """Helper function for the communication_test function.
+
+    Args:
+        n (int, optional): The number of measurement settings. Defaults to 8.
+        state_type (str, optional): The state type. Defaults to 'max_entangled'.
+        generate_new (bool, optional): If set to False, the function will not generate a new dataset.
+            Defaults to True.
+
+    Returns:
+        str: The filename for the function to open.
+    """
     if state_type == 'max_entangled':
         state = qt.ket2dm(nme_state(np.pi/4))
         filename = 'datasets\\dataset_maximally_entangled_state.csv'
@@ -220,8 +244,7 @@ def generate_for_comm_test(n=8, state_type='max_entangled', generate_new=True):
 
 
 def CHSH_measurements():
-    """Generate vectors for CHSH measurements
-    """
+    """Generate vectors for CHSH measurements settings."""
     vec_1 = [0, 0, 1]
     vec_2 = [1, 0, 0]
     vec_3 = [1/np.sqrt(2), 0, 1/np.sqrt(2)]
@@ -233,8 +256,7 @@ def CHSH_measurements():
 
 
 def CHSH_measurements_extended():
-    """Generate vectors for CHSH measurements
-    """
+    """Generate vectors for CHSH measurements. Extended to include a mirrored and inverted version."""
     vec_a1 = [0, 0, 1]
     vec_a2 = [1, 0, 0]
     vec_b1 = [1/np.sqrt(2), 0, 1/np.sqrt(2)]
@@ -251,8 +273,7 @@ def CHSH_measurements_extended():
 
 
 def maximum_violation_measurements(theta):
-    """Generate 8 pairs of maximally nonlocal measurements
-    """
+    """Generate 8 pairs of maximally nonlocal (for CHSH) measurements."""
     kai = np.arccos(1/np.sqrt(1+np.sin(2*theta)**2))
     vec_a1 = [0, 0, 1]
     vec_a2 = [1, 0, 0]
@@ -274,9 +295,38 @@ def maximum_violation_measurements(theta):
 
 
 def maximum_violation_measurements_extended(theta, n=8):
+    """Generate n number of measurements, 8 of which is generated from the
+    maximum_violation_measurements() function.
+
+    Args:
+        theta (float): The theta of the non-maximally entangled state.
+        n (int, optional): The number of measurements to be done. Defaults to 8.
+
+    Returns:
+        tuple: A tuple containing two items, the list of vectors for Alice and Bob.
+    """
     (vec_alice, vec_bob) = maximum_violation_measurements(theta)
     n_add = n-8
     (vec_alice_add, vec_bob_add) = generate_random_vectors(n_add)
     vec_alice += vec_alice_add
     vec_bob += vec_bob_add
     return (vec_alice, vec_bob)
+
+
+def read_from_vector_dataset(filename):
+    """Reads the vectors from a .csv file containing 3D vectors.
+
+    Args:
+        filename (str): The filename containing the vectors
+
+    Returns:
+        tuple: A tuple containing two items, the list of vectors for Alice and Bob.
+    """
+    array = np.genfromtxt(filename, delimiter=",")
+    vec_alice = []
+    vec_bob = []
+    for row in array:
+        vec_alice.append(row[:3])
+        vec_bob.append(row[3:])
+    return (vec_alice, vec_bob)
+    
