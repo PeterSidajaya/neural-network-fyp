@@ -19,14 +19,17 @@ def open_dataset(filename, limit=None):
             The size of the output is (-1, 4).
     """
     df = pd.read_csv(filename, index_col=0)
-    df = df.to_numpy()
-    input_array = df[::4, :6]                   # input is the first 6 columns
-    output_array = df[:, 8].reshape(-1, 4)      # reshape the probability
+    return process_dataset(df, limit=limit)
+
+
+def process_dataset(dataframe, limit=None):
+    dataframe = dataframe.to_numpy()
+    input_array = dataframe[::4, :6]                   # input is the first 6 columns
+    output_array = dataframe[:, 8].reshape(-1, 4)      # reshape the probability
     if limit:
         input_array = input_array[:limit]
         output_array = output_array[:limit]
     return (input_array, output_array)
-
 
 def add_LHV(input_array):
     """Adds LHV for every input setting

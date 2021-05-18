@@ -183,7 +183,8 @@ def customLoss_multiple(y_true, y_pred):
 def comm_customLoss_distr_multiple(y_pred):
     """ Converts the output of the neural network to several probability vectors.
     That is from a shape of (batch_size, 1 + outputsize + outputsize + outputsize + outputsize)
-    to a shape of (training_size, outputsize * outputsize)
+    to a shape of (training_size, outputsize * outputsize).
+    Used for the communication model only!
     """
     outputsize = config.party_outputsize
     LHV_size = config.LHV_size
@@ -217,7 +218,7 @@ def comm_customLoss_distr_multiple(y_pred):
 
 
 def comm_customLoss_multiple(y_true, y_pred):
-    """ Custom loss function."""
+    """ Custom loss function. Used for the communication model only!"""
     # Note that y_true is just LHV_size copies of the target distributions. So any row could be taken here. We just take 0-th row.
     probs_list = comm_customLoss_distr_multiple(y_pred)
     loss = 0
