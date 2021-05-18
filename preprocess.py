@@ -40,8 +40,10 @@ def add_LHV(input_array):
     LHV_per_setting = config.LHV_size
     input_size = input_array.shape[0]
     input_array = np.repeat(input_array, LHV_per_setting, axis=0)
-    LHV_list = np.array([random.gauss(0.5, 0.28867) for i in range(
-        LHV_per_setting * input_size * config.number_of_LHV)]).reshape(LHV_per_setting * input_size, -1)
-    # LHV_list = np.array([random.uniform(0, 1) for i in range(
-    #     LHV_per_setting * input_size * config.number_of_LHV)]).reshape(LHV_per_setting * input_size, -1)
+    if config.LHV_type == "gauss":
+        LHV_list = np.array([random.gauss(0.5, 0.28867) for i in range(
+            LHV_per_setting * input_size * config.number_of_LHV)]).reshape(LHV_per_setting * input_size, -1)
+    elif config.LHV_type == "uniform":
+        LHV_list = np.array([random.uniform(0.0, 1.0) for i in range(
+            LHV_per_setting * input_size * config.number_of_LHV)]).reshape(LHV_per_setting * input_size, -1)
     return np.concatenate((input_array, LHV_list), axis=1)

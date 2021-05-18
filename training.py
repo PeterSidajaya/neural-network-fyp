@@ -170,6 +170,47 @@ def train_model_comm_history(dataset, limit=None):
     return (min(score, min(history.history['loss'])), loss_history)
 
 
+def train(model, dataset, save=False, savename=None):
+    """Train a communication model
+    """
+    print("Starting training (with communication)...")
+    x, y = open_dataset(dataset)
+    data = np.concatenate((x, y), axis=1)
+    LHV_size = config.LHV_size
+    training_size = config.training_size
+    number_of_measurements = data.shape[0]
+
+    print("Generating model...")
+    K.clear_session()
+
+    optimizer = config.optimizer
+    model.compile(loss=comm_customLoss_multiple, optimizer=optimizer, metrics=[])
+    loss_history = []
+
+    rng = np.random.default_rng()
+    print("Fitting model...")
+    # Fit model
+    for epoch in range(config.epochs // config.shuffle_epochs):
+        print("Shuffling data")
+        print("Shuffle ", epoch + 1, " out of ",
+              config.epochs // config.shuffle_epochs)
+        rng.shuffle(data)
+        x_train = data[:, :6]
+        y_train = data[:, 6:]
+        x_train = add_LHV(x_train)                       	# Add the LHV
+        # To match the size of the inputs
+        y_train = np.repeat(y_train, LHV_size, axis=0)
+        history = model.fit(x_train, y_train, batch_size=training_size*LHV_size,
+                            epochs=config.shuffle_epochs, verbose=1, shuffle=False)
+        loss_history += history.history['loss']
+        if history.history['loss'][-1] < config.cutoff:          	# Cutoff at 1e-4
+            break
+    score = model.evaluate(x=x_train, y=y_train,
+                           batch_size=data.shape[0]*LHV_size)
+    if save:
+        model.save(savename)
+    return (min(score, min(history.history['loss'])), loss_history)
+
 def mixed_run(n=4, start=0, end=1, step=10, a=CHSH_measurements()[0], b=CHSH_measurements()[1], generate_new=True):
     """Train the no-communication model for a set of mixed states.
     Keywrord arguments:
