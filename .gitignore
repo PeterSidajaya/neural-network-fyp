@@ -1,2 +1,7 @@
 *.csv
 *.pyc
+*.txt
+*.h5
+*.png
+model_18052021/
+model_19052021/

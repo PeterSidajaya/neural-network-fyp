@@ -17,7 +17,7 @@ def predict_dataset(model, x):
 
 
 def comm_distr(model, n=2048):
-    vec_alice, vec_bob = generate_random_vectors(n)
+    vec_alice, vec_bob = random_joint_vectors(n)
     LHVs = np.linspace(0, 1, num=11)
     input = np.concatenate([np.tile(vec_alice, (11, 1)), np.tile(vec_bob, (11, 1)), np.repeat(
         LHVs.reshape(11, 1), n, axis=0)], axis=1)

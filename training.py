@@ -170,7 +170,7 @@ def train_model_comm_history(dataset, limit=None):
     return (min(score, min(history.history['loss'])), loss_history)
 
 
-def train(model, dataset, save=False, savename=None):
+def train(model, dataset, save=False, save_name=None):
     """Train a communication model
     """
     print("Starting training (with communication)...")
@@ -208,7 +208,8 @@ def train(model, dataset, save=False, savename=None):
     score = model.evaluate(x=x_train, y=y_train,
                            batch_size=data.shape[0]*LHV_size)
     if save:
-        model.save(savename)
+        print("Saving model...")
+        model.save(save_name)
     return (min(score, min(history.history['loss'])), loss_history)
 
 def mixed_run(n=4, start=0, end=1, step=10, a=CHSH_measurements()[0], b=CHSH_measurements()[1], generate_new=True):
