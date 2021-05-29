@@ -326,11 +326,15 @@ def correlated_measurements(theta, n=4):
     vec_b4 = np.multiply(np.cos(kai), vec_a3) - \
         np.multiply(np.sin(kai), vec_a4)
     
-    vec_a_add, vec_b_add = random_joint_vectors(n - 4)
+    vec_a_add, vec_b_add = random_joint_vectors(n - 2)
     
-    vec_a_list = [vec_a1, vec_a2, vec_a3, vec_a4] + vec_a_add
-    vec_b_list = [vec_b1, vec_b2, vec_b3, vec_b4] + vec_b_add
+    vec_a_list = [vec_a1, vec_a2] + vec_a_add
+    vec_b_list = [vec_b1, vec_b2] + vec_b_add
     
+    return create_correlated_measurements(vec_a_list, vec_b_list)
+
+
+def create_correlated_measurements(vec_a_list, vec_b_list):
     alice_list = []
     bob_list = []
     for vec_a in vec_a_list:

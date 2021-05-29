@@ -14,33 +14,38 @@ import qutip as qt
 import pickle
 from distribution_generator import *
 from training import *
-from grapher import plot_dataset, plot_measurements
+from grapher import *
 
-config.shuffle_epochs = 1
+config.shuffle_epochs = 100
 config.training_size = 64
 config.epochs = 10000
 
-
-folder_name = "model_20052021\\"
+folder_name = "Bell-inequality-search\\"
 state = qt.ket2dm(nme_state(np.pi/8))
 
+
 vec_alice, vec_bob = correlated_measurements(np.pi/8, n=8)
+
+plot_measurements(vec_alice)
+plot_measurements(vec_bob)
+
 dataset_df = generate_dataset_from_vectors(state, vec_alice, vec_bob)
 filename = folder_name + "dataset.csv"
 dataset_df.to_csv(filename)
 
-
 minimas = []
 histories = []
 K.clear_session()
+
 model = build_model_comm()
-model.compile(loss=comm_customLoss_multiple, optimizer=config.optimizer, metrics=[])
+
 minima, history = train(model, filename, save=True,
                         save_name=folder_name + 'pi_8_model.h5')
+
 minimas.append(minima)
 histories.append(history)
 
-model.save_weights('weights.h5')
+model.save_weights(folder_name + 'weights.h5')
 symbolic_weights = getattr(model.optimizer, 'weights')
 weight_values = K.batch_get_value(symbolic_weights)
 with open(folder_name + 'optimizer.pkl', 'wb') as f:
@@ -51,3 +56,4 @@ np.savetxt(save_name, minimas)
 save_name = folder_name + 'history_without_comm_nme.csv'
 np.savetxt(save_name, histories[0])
 
+print("Training finished")

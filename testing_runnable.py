@@ -14,15 +14,14 @@ import qutip as qt
 import pickle
 from distribution_generator import *
 from training import *
-from grapher import plot_dataset, plot_measurements
+from grapher import *
 
 
-folder_name = "model_20052021\\"
+filename = "U5000R-100+300\\pi_8_model.h5"
+
 state = qt.ket2dm(nme_state(np.pi/8))
 
 
-model = keras.models.load_model(folder_name + "pi_8_model.h5", compile=False)
-print(validate(model, state))
+model = keras.models.load_model(filename, compile=False)
 distr = comm_distr(model, n = 4096)
-distr.to_csv(folder_name + "distr.csv")
 plot_comm_distr(distr, type='spherical')
