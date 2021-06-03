@@ -2,9 +2,6 @@ import qutip as qt
 import numpy as np
 import pandas as pd
 import math
-import os
-import sys
-import getopt
 
 """This file contains the functions needed to create the datasets."""
 
@@ -34,7 +31,7 @@ def probability(state, vector_a, vector_b):
     return prob
 
 
-def generate_random_vectors(n):
+def random_joint_vectors(n):
     """Generate a list of random 3D unit vectors."""
     a, b = [], []
     for i in range(n):
@@ -168,7 +165,7 @@ def generate_werner(n=8, start=0, end=1, step=10, a=None, b=None):
     count = 0
     # Check if vectors are passed. If not, generate randomly
     if a == None or b == None:
-        a, b = generate_random_vectors(n)
+        a, b = random_joint_vectors(n)
     for w in np.linspace(start, end, step):
         state = w * bell + (1-w) * iden
         filename = 'datasets\\dataset_werner_state_' + str(count) + '.csv'
@@ -189,7 +186,7 @@ def generate_mixed(n=8, start=0, end=1, step=10, a=None, b=None):
     count = 0
     # Check if vectors are passed. If not, generate randomly
     if a == None or b == None:
-        a, b = generate_random_vectors(n)
+        a, b = random_joint_vectors(n)
     for p in np.linspace(start, end, step):
         state = mixed_separable(p=p)
         filename = 'datasets\\dataset_mixed_separable_state_' + \
@@ -273,7 +270,7 @@ def CHSH_measurements_extended():
 
 
 def maximum_violation_measurements(theta):
-    """Generate 8 pairs of maximally nonlocal (for CHSH) measurements."""
+    """Generate 8 pairs of maximally nonlocal (for NME states) measurements."""
     kai = np.arccos(1/np.sqrt(1+np.sin(2*theta)**2))
     vec_a1 = [0, 0, 1]
     vec_a2 = [1, 0, 0]
@@ -307,10 +304,50 @@ def maximum_violation_measurements_extended(theta, n=8):
     """
     (vec_alice, vec_bob) = maximum_violation_measurements(theta)
     n_add = n-8
-    (vec_alice_add, vec_bob_add) = generate_random_vectors(n_add)
+    (vec_alice_add, vec_bob_add) = random_joint_vectors(n_add)
     vec_alice += vec_alice_add
     vec_bob += vec_bob_add
     return (vec_alice, vec_bob)
+
+
+def correlated_measurements(theta, n=4):
+    kai = np.arccos(1/np.sqrt(1+np.sin(2*theta)**2))
+    vec_a1 = [0, 0, 1]
+    vec_a2 = [1, 0, 0]
+    vec_b1 = np.multiply(np.cos(kai), vec_a1) + \
+        np.multiply(np.sin(kai), vec_a2)
+    vec_b2 = np.multiply(np.cos(kai), vec_a1) - \
+        np.multiply(np.sin(kai), vec_a2)
+
+    vec_a3 = [0, 0, -1]
+    vec_a4 = [0, 1, 0]
+    vec_b3 = np.multiply(np.cos(kai), vec_a3) + \
+        np.multiply(np.sin(kai), vec_a4)
+    vec_b4 = np.multiply(np.cos(kai), vec_a3) - \
+        np.multiply(np.sin(kai), vec_a4)
+    
+    vec_a_add, vec_b_add = random_joint_vectors(n - 2)
+    
+    vec_a_list = [vec_a1, vec_a2] + vec_a_add
+    vec_b_list = [vec_b1, vec_b2] + vec_b_add
+    
+    alice_list = []
+    bob_list = []
+    for vec_a in vec_a_list:
+        for vec_b in vec_b_list:
+            alice_list.append(vec_a)
+            bob_list.append(vec_b)
+    return alice_list, bob_list
+
+
+def create_correlated_measurements(vec_a_list, vec_b_list):
+    alice_list = []
+    bob_list = []
+    for vec_a in vec_a_list:
+        for vec_b in vec_b_list:
+            alice_list.append(vec_a)
+            bob_list.append(vec_b)
+    return alice_list, bob_list
 
 
 def read_from_vector_dataset(filename):
@@ -328,5 +365,4 @@ def read_from_vector_dataset(filename):
     for row in array:
         vec_alice.append(row[:3])
         vec_bob.append(row[3:])
-    return (vec_alice, vec_bob)
-    
+    return (vec_alice, vec_bob)    
