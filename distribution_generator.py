@@ -331,7 +331,13 @@ def correlated_measurements(theta, n=4):
     vec_a_list = [vec_a1, vec_a2] + vec_a_add
     vec_b_list = [vec_b1, vec_b2] + vec_b_add
     
-    return create_correlated_measurements(vec_a_list, vec_b_list)
+    alice_list = []
+    bob_list = []
+    for vec_a in vec_a_list:
+        for vec_b in vec_b_list:
+            alice_list.append(vec_a)
+            bob_list.append(vec_b)
+    return alice_list, bob_list
 
 
 def create_correlated_measurements(vec_a_list, vec_b_list):
