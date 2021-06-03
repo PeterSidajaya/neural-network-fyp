@@ -65,13 +65,9 @@ def plot_comm_distr(distr, type='spherical'):
     plt.show()
 
 
-def validate(model, state, n=1024, mode='random'):
+def validate(model, state, n=1024):
     config.training_size = n
-    if mode == 'random':
-        dataset = generate_dataset(state, n)
-    elif mode == 'correlated':
-        a, b = correlated_measurements(np.pi/8, n=n)
-        dataset = generate_dataset_from_vectors(state, a, b)
+    dataset = generate_dataset(state, n)
     x, y_true = process_dataset(dataset)
     x_LHV = add_LHV(x)
     y_predict = tf.cast(model.predict(x_LHV), tf.float32)

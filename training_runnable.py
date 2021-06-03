@@ -21,10 +21,10 @@ config.training_size = 64
 config.epochs = 10000
 
 folder_name = "Bell-inequality-search\\"
-state = qt.ket2dm(nme_state(np.pi/8))
+state = qt.ket2dm(nme_state(np.pi/16))
 
 
-vec_alice, vec_bob = correlated_measurements(np.pi/8, n=8)
+vec_alice, vec_bob = correlated_measurements(np.pi/16, n=8)
 
 plot_measurements(vec_alice)
 plot_measurements(vec_bob)
@@ -40,7 +40,7 @@ K.clear_session()
 model = build_model_comm()
 
 minima, history = train(model, filename, save=True,
-                        save_name=folder_name + 'pi_8_model.h5')
+                        save_name=folder_name + 'pi_16_model.h5')
 
 minimas.append(minima)
 histories.append(history)

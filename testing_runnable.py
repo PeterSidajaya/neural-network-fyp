@@ -17,11 +17,7 @@ from training import *
 from grapher import *
 
 
-filename = "U5000R-100+300\\pi_8_model.h5"
-
-state = qt.ket2dm(nme_state(np.pi/8))
-
-
-model = keras.models.load_model(filename, compile=False)
-distr = comm_distr(model, n = 4096)
-plot_comm_distr(distr, type='spherical')
+filename = "Bell-inequality-search\\search-1\\dataset.csv"
+vec_alice, vec_bob = read_vectors(filename)
+vec_alice = np.vstack([vec_alice[0:8], random_vector(3), random_vector(3)])
+plot_measurements(vec_alice)
