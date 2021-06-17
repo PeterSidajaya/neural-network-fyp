@@ -17,7 +17,9 @@ from training import *
 from grapher import *
 
 
-filename = "Bell-inequality-search\\search-1\\dataset.csv"
-vec_alice, vec_bob = read_vectors(filename)
-vec_alice = np.vstack([vec_alice[0:8], random_vector(3), random_vector(3)])
-plot_measurements(vec_alice)
+folder_name = "new-LHV\\pi-4_100\\"
+state = qt.ket2dm(nme_state(np.pi/4))
+
+
+model = keras.models.load_model(folder_name + "pi_4_model.h5", compile=False)
+print(validate(model, state))

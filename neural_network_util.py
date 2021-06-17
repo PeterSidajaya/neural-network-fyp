@@ -54,7 +54,7 @@ def build_model():
 def build_model_comm():
     """Build a model with one bit of communication between parties.
     """
-    number_of_LHV = config.number_of_LHV  # Number of hidden variables, i.e. alpha, beta, gamma
+    number_of_LHV = config.number_of_LHV  # Number of hidden variables, i.e. 6 for vector pair
     depth = config.party_depth
     width = config.party_width
     outputsize = config.party_outputsize
@@ -67,7 +67,7 @@ def build_model_comm():
     # Group input tensor according to whether alpha, beta or gamma hidden variable.
     group_alpha = Lambda(lambda x: x[:, 0:3], output_shape=((3,)))(inputTensor)
     group_beta = Lambda(lambda x: x[:, 3:6], output_shape=((3,)))(inputTensor)
-    group_LHV = Lambda(lambda x: x[:, 6:7], output_shape=((1,)))(inputTensor)
+    group_LHV = Lambda(lambda x: x[:, 6:6+number_of_LHV], output_shape=((number_of_LHV,)))(inputTensor)
 
     # Route hidden variables to visibile parties Alice and Bob
     group_a1 = Concatenate()([group_alpha, group_LHV])

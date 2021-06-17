@@ -27,16 +27,14 @@ def comm_distr(model, n=2048):
     return df
 
 
-def plot_comm_distr_single(distr, index, axis, type='scatter3D'):
+def plot_comm_distr_single(distr, index, axis, type='spherical'):
     LHVs = np.linspace(0, 1, num=11)
     distr_sliced = distr[distr['LHV'] == LHVs[index]]
     xdata = distr_sliced.ax
     ydata = distr_sliced.ay
     zdata = distr_sliced.az
     cdata = distr_sliced.c
-    if type == 'scatter3D':
-        img = axis.scatter3D(xdata, ydata, zdata, c=cdata)
-    elif type == 'spherical':
+    if type == 'spherical':
         theta_data = np.arccos(zdata)
         phi_data = np.arctan2(ydata, xdata)
         img = axis.scatter(phi_data, theta_data, c=cdata, vmin=0, vmax=1)
@@ -65,7 +63,7 @@ def plot_comm_distr(distr, type='spherical'):
     plt.show()
 
 
-def validate(model, state, n=1024):
+def validate(model, state, n=4096):
     config.training_size = n
     dataset = generate_dataset(state, n)
     x, y_true = process_dataset(dataset)
@@ -84,4 +82,36 @@ def evaluate(model, filename):
     y_true = tf.cast(np.repeat(y_true, config.LHV_size, axis=0), tf.float32)
     score = comm_customLoss_multiple(y_true, y_predict)
     return score
-    
+
+
+def comm_distr_TV(model, LHV_1, LHV_2, n=8192):
+    vec_alice, vec_bob = random_joint_vectors(n)
+    LHVs = np.concatenate([LHV_1, LHV_2], axis=0).reshape(1, 6)
+    input = np.concatenate(
+        [vec_alice, vec_bob, np.repeat(LHVs, n, axis=0)], axis=1)
+    output = model.predict(input)
+    df = pd.DataFrame(np.concatenate((input, output), axis=1), columns=[
+                      'ax', 'ay', 'az', 'bx', 'by', 'bz', 'L1x', 'L1y', 'L1z', 'L2x', 'L2y', 'L2z', 'c', 'p_1(a=0)', 'p_1(a=1)', 'p_1(b=0)', 'p_1(b=1)', 'p_2(a=0)', 'p_2(a=1)', 'p_2(b=0)', 'p_2(b=1)'])
+    return df
+
+
+def plot_comm_distr_TV(distr, type='spherical'):
+    xdata = distr.ax
+    ydata = distr.ay
+    zdata = distr.az
+    cdata = distr.c
+    if type == 'scatter3D':
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        ax.scatter(xdata, ydata, zdata, c=cdata)
+    elif type == 'spherical':
+        theta_data = np.arccos(zdata)
+        phi_data = np.arctan2(ydata, xdata)
+        
+        fig = plt.figure()
+        ax = fig.add_subplot()
+        img = ax.scatter(phi_data, theta_data, c=cdata, vmin=0, vmax=1)
+        fig.subplots_adjust(right=0.9)
+        cbar_ax = fig.add_axes([0.95, 0.15, 0.01, 0.7])
+        fig.colorbar(img, cax=cbar_ax)
+    plt.show()

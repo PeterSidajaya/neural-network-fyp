@@ -16,18 +16,14 @@ from distribution_generator import *
 from training import *
 from grapher import *
 
-config.shuffle_epochs = 100
-config.training_size = 64
-config.epochs = 10000
+config.shuffle_epochs = 1
+config.epochs = 50
 
-folder_name = "Bell-inequality-search\\"
+folder_name = "new-LHV\\pi-16_50_SV\\"
 state = qt.ket2dm(nme_state(np.pi/16))
 
 
-vec_alice, vec_bob = correlated_measurements(np.pi/16, n=8)
-
-plot_measurements(vec_alice)
-plot_measurements(vec_bob)
+vec_alice, vec_bob = maximum_violation_measurements_extended(np.pi/16, n=10000)
 
 dataset_df = generate_dataset_from_vectors(state, vec_alice, vec_bob)
 filename = folder_name + "dataset.csv"
@@ -51,9 +47,9 @@ weight_values = K.batch_get_value(symbolic_weights)
 with open(folder_name + 'optimizer.pkl', 'wb') as f:
     pickle.dump(weight_values, f)
 
-save_name = folder_name + 'nme_loss.csv'
+save_name = folder_name + 'loss.csv'
 np.savetxt(save_name, minimas)
-save_name = folder_name + 'history_without_comm_nme.csv'
+save_name = folder_name + 'history.csv'
 np.savetxt(save_name, histories[0])
 
 print("Training finished")
