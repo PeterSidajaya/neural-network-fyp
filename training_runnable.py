@@ -2,7 +2,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 from model_testing import *
-from neural_network_util import build_model_comm, comm_customLoss_multiple
+from neural_network_util import build_model_comm, comm_customLoss_multiple, build_model, customLoss_multiple
 from matplotlib import cm
 import config
 import numpy as np
@@ -19,11 +19,11 @@ from grapher import *
 config.shuffle_epochs = 1
 config.epochs = 50
 
-folder_name = "new-LHV\\pi-16_50_SV\\"
-state = qt.ket2dm(nme_state(np.pi/16))
+folder_name = "new-LHV\\pi-8_50_SV\\"
+state = qt.ket2dm(nme_state(np.pi/8))
 
 
-vec_alice, vec_bob = maximum_violation_measurements_extended(np.pi/16, n=10000)
+vec_alice, vec_bob = maximum_violation_measurements_extended(np.pi/8, n=10000)
 
 dataset_df = generate_dataset_from_vectors(state, vec_alice, vec_bob)
 filename = folder_name + "dataset.csv"
@@ -36,7 +36,7 @@ K.clear_session()
 model = build_model_comm()
 
 minima, history = train(model, filename, save=True,
-                        save_name=folder_name + 'pi_16_model.h5')
+                        save_name=folder_name + 'pi_8_model.h5')
 
 minimas.append(minima)
 histories.append(history)

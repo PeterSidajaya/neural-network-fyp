@@ -63,7 +63,7 @@ def generate_dataset(state, n):
         p.append(prob)
         ct += 1
         if ct == 100:
-            print(f'Progress is {i / n * 100 :.2f}%.')
+            # print(f'Progress is {i / n * 100 :.2f}%.')
             ct = 0
 
     # Adds two special cases to the distribution
@@ -81,7 +81,7 @@ def generate_dataset(state, n):
     b.append(vector_b)
     p.append(prob)
 
-    print('Finished.')
+    # print('Finished.')
 
     ax = [val[0] for val in a for _ in range(4)]
     ay = [val[1] for val in a for _ in range(4)]
@@ -213,33 +213,6 @@ def generate_random_settings(n=8, state_type='max_entangled'):
     return filename
 
 
-def generate_for_comm_test(n=8, state_type='max_entangled', generate_new=True):
-    """Helper function for the communication_test function.
-
-    Args:
-        n (int, optional): The number of measurement settings. Defaults to 8.
-        state_type (str, optional): The state type. Defaults to 'max_entangled'.
-        generate_new (bool, optional): If set to False, the function will not generate a new dataset.
-            Defaults to True.
-
-    Returns:
-        str: The filename for the function to open.
-    """
-    if state_type == 'max_entangled':
-        state = qt.ket2dm(nme_state(np.pi/4))
-        filename = 'datasets\\dataset_maximally_entangled_state.csv'
-        a, b = maximum_violation_measurements_extended(np.pi/4, n=n)
-    elif state_type == 'entangled':
-        state = qt.ket2dm(nme_state(np.pi/8))
-        filename = 'datasets\\dataset_non_maximally_entangled_pi8_state.csv'
-        a, b = maximum_violation_measurements_extended(np.pi/8, n=n)
-    if not generate_new:
-        print("NOT GENERATING NEW DATA")
-        return filename
-    generate_dataset_from_vectors(state, a, b).to_csv(filename)
-    return filename
-
-
 def CHSH_measurements():
     """Generate vectors for CHSH measurements settings."""
     vec_1 = [0, 0, 1]
@@ -310,7 +283,8 @@ def maximum_violation_measurements_extended(theta, n=8):
     return (vec_alice, vec_bob)
 
 
-def correlated_measurements(theta, n=4):
+def correlated_measurements(theta, n=2):
+    """Create a joint measurements list by combining two lists of n vectors from each party."""
     kai = np.arccos(1/np.sqrt(1+np.sin(2*theta)**2))
     vec_a1 = [0, 0, 1]
     vec_a2 = [1, 0, 0]
@@ -319,28 +293,16 @@ def correlated_measurements(theta, n=4):
     vec_b2 = np.multiply(np.cos(kai), vec_a1) - \
         np.multiply(np.sin(kai), vec_a2)
 
-    vec_a3 = [0, 0, -1]
-    vec_a4 = [0, 1, 0]
-    vec_b3 = np.multiply(np.cos(kai), vec_a3) + \
-        np.multiply(np.sin(kai), vec_a4)
-    vec_b4 = np.multiply(np.cos(kai), vec_a3) - \
-        np.multiply(np.sin(kai), vec_a4)
-    
     vec_a_add, vec_b_add = random_joint_vectors(n - 2)
-    
+
     vec_a_list = [vec_a1, vec_a2] + vec_a_add
     vec_b_list = [vec_b1, vec_b2] + vec_b_add
-    
-    alice_list = []
-    bob_list = []
-    for vec_a in vec_a_list:
-        for vec_b in vec_b_list:
-            alice_list.append(vec_a)
-            bob_list.append(vec_b)
-    return alice_list, bob_list
+
+    return combine_measurements(vec_a_list, vec_b_list)
 
 
-def create_correlated_measurements(vec_a_list, vec_b_list):
+def combine_measurements(vec_a_list, vec_b_list):
+    """Combine two lists of measurements, one from each party, into a joint measurement list."""
     alice_list = []
     bob_list = []
     for vec_a in vec_a_list:
@@ -351,7 +313,7 @@ def create_correlated_measurements(vec_a_list, vec_b_list):
 
 
 def read_from_vector_dataset(filename):
-    """Reads the vectors from a .csv file containing 3D vectors.
+    """Reads the vectors from a .csv dataset file containing 3D vectors.
 
     Args:
         filename (str): The filename containing the vectors
@@ -365,4 +327,4 @@ def read_from_vector_dataset(filename):
     for row in array:
         vec_alice.append(row[:3])
         vec_bob.append(row[3:])
-    return (vec_alice, vec_bob)    
+    return (vec_alice, vec_bob)

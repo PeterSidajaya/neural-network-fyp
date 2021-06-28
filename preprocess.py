@@ -25,12 +25,15 @@ def open_dataset(filename, limit=None):
 
 def process_dataset(dataframe, limit=None):
     dataframe = dataframe.to_numpy()
-    input_array = dataframe[::4, :6]                   # input is the first 6 columns
-    output_array = dataframe[:, 8].reshape(-1, 4)      # reshape the probability
+    # input is the first 6 columns
+    input_array = dataframe[::4, :6]
+    # reshape the probability
+    output_array = dataframe[:, 8].reshape(-1, 4)
     if limit:
         input_array = input_array[:limit]
         output_array = output_array[:limit]
     return (input_array, output_array)
+
 
 def add_LHV(input_array):
     """Adds LHV for every input setting
@@ -45,17 +48,21 @@ def add_LHV(input_array):
     input_size = input_array.shape[0]
     input_array = np.repeat(input_array, LHV_per_setting, axis=0)
     if config.LHV_type == "gauss":
+        config.number_of_LHV = 1
         LHV_list = np.array([random.gauss(0.5, 0.28867) for i in range(
             LHV_per_setting * input_size * config.number_of_LHV)]).reshape(LHV_per_setting * input_size, -1)
     elif config.LHV_type == "uniform":
+        config.number_of_LHV = 1
         LHV_list = np.array([random.uniform(0.0, 1.0) for i in range(
             LHV_per_setting * input_size * config.number_of_LHV)]).reshape(LHV_per_setting * input_size, -1)
-    elif config.LHV_type == "vector pair":
-        config.number_of_LHV = 6
-        LHV_list = np.array([np.concatenate((random_vector(3), random_vector(3))) for i in range(
-            LHV_per_setting * input_size)])
     elif config.LHV_type == "vector":
         config.number_of_LHV = 3
         LHV_list = np.array([random_vector(3) for i in range(
             LHV_per_setting * input_size)])
+    elif config.LHV_type == "vector pair":
+        config.number_of_LHV = 6
+        LHV_list = np.array([np.concatenate((random_vector(3), random_vector(3))) for i in range(
+            LHV_per_setting * input_size)])
+    else:
+        raise ValueError('LHV type is not recognized.')
     return np.concatenate((input_array, LHV_list), axis=1)

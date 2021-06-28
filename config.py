@@ -5,9 +5,9 @@ This file contains all the settings and hyperparameters to be used for the neura
 """
 
 
-LHV_size = 1000		    # number of LHV for evaluation
-training_size = 250		# number of measurement settings for one training step
-number_of_LHV = 3		# number of LHV (one means a single number)
+LHV_size = 1000		        # number of LHV for evaluation
+training_size = 250		    # number of measurement settings for one training step
+number_of_LHV = 3		    # number of LHV (one means a single number)
 LHV_type = "vector"    # type of LHV ("gauss", "uniform")
 
 party_width = 50			        # width of NN
