@@ -145,6 +145,12 @@ def nme_state(theta):
     return a * qt.tensor(qt.basis(2, 0), qt.basis(2, 0)) + b * qt.tensor(qt.basis(2, 1), qt.basis(2, 1))
 
 
+def nme_singlet(theta):
+    a = np.cos(theta)
+    b = np.sin(theta)
+    return a * qt.tensor(qt.basis(2, 0), qt.basis(2, 1)) - b * qt.tensor(qt.basis(2, 1), qt.basis(2, 0))
+
+
 def mixed_separable(p=0.5):
     """Generate a mixed separable density matrix defined by p|00><00| + (1-p)|11><11|."""
     return p * qt.ket2dm(qt.tensor(qt.basis(2, 0), qt.basis(2, 0))) + (1-p) * qt.ket2dm(qt.tensor(qt.basis(2, 1), qt.basis(2, 1)))

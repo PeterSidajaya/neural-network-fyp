@@ -19,11 +19,11 @@ from grapher import *
 config.shuffle_epochs = 1
 config.epochs = 50
 
-folder_name = "new-LHV\\pi-8_50_SV\\"
-state = qt.ket2dm(nme_state(np.pi/8))
+folder_name = "new-LHV\\pi-16_100_SV_singlet\\"
+state = qt.ket2dm(nme_singlet(np.pi/16))
 
 
-vec_alice, vec_bob = maximum_violation_measurements_extended(np.pi/8, n=10000)
+vec_alice, vec_bob = maximum_violation_measurements_extended(np.pi/16, n=10000)
 
 dataset_df = generate_dataset_from_vectors(state, vec_alice, vec_bob)
 filename = folder_name + "dataset.csv"
@@ -33,11 +33,17 @@ minimas = []
 histories = []
 K.clear_session()
 
-model = build_model_comm()
+model = keras.models.load_model("new-LHV\\pi-16_50_SV_singlet\\pi_16_model.h5", compile=False)
 
+config.epochs = 1
+train(model, filename, save=False, lr=1e-6, loss=comm_customLoss_multiple)
+
+config.epochs = 50
+with open('new-LHV\\pi-16_50_SV_singlet\\optimizer.pkl', 'rb') as f:
+    weight_values = pickle.load(f)
+model.optimizer.set_weights(weight_values)
 minima, history = train(model, filename, save=True,
-                        save_name=folder_name + 'pi_8_model.h5')
-
+                        save_name=folder_name + 'pi_16_model.h5', loss=comm_customLoss_multiple)
 minimas.append(minima)
 histories.append(history)
 
