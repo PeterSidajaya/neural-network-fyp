@@ -60,7 +60,7 @@ def build_model_comm():
     outputsize = config.party_outputsize
     activ = config.activation_func
     activ2 = 'softmax'
-    activ3 = config.activation_func_comm
+    activ3 = 'softmax'
     # 6 numbers (two 3D vectors) plus one hidden variable as inputs.
     inputTensor = Input((6+number_of_LHV,))
 
@@ -97,7 +97,7 @@ def build_model_comm():
     group_b1 = Dense(outputsize, activation=activ2)(group_b1)
     group_a2 = Dense(outputsize, activation=activ2)(group_a2)
     group_b2 = Dense(outputsize, activation=activ2)(group_b2)
-    group_c = Dense(1, activation=activ3)(group_c)
+    group_c = Dense(2, activation=activ3)(group_c)
 
     # Output the two probability distributions and combine them according to the formula
     """ This is WRONG! We can't weigh before the outer product as it means more than one bit of
@@ -108,7 +108,7 @@ def build_model_comm():
         lambda x: x[0] * x[1] + (1.0 - x[0]) * x[2])([group_c, outputTensor1, outputTensor2])
     """
     outputTensor = Concatenate()(
-        [group_c, group_a1, group_b1, group_a2, group_b2])
+        [group_c[:,0:1], group_a1, group_b1, group_a2, group_b2])
 
     model = Model(inputTensor, outputTensor)
     return model
