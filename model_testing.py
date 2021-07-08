@@ -132,7 +132,7 @@ def map_distr_SV(model, LHV_1, n=4096):
         dataframe: dataframe containing the distribution of the communication bit
     """
     vec_alice, vec_bob = random_joint_vectors(n)
-    LHVs = np.concatenate([LHV_1,], axis=0).reshape(1, 3)
+    LHVs = np.concatenate([LHV_1, ], axis=0).reshape(1, 3)
     config.number_of_LHV = 3
     input = np.concatenate(
         [vec_alice, vec_bob, np.repeat(LHVs, n, axis=0)], axis=1)
@@ -142,14 +142,14 @@ def map_distr_SV(model, LHV_1, n=4096):
     return df
 
 
-def plot_comm_distr_vector(distr, type='spherical', color='comm', savename=None, show=True):
+def plot_comm_distr_vector(distr, type='spherical', color='comm', set_axes=None, savename=None, show=True):
     """Plot a comm distribution for a vector pair model"""
     cdata = distr.c
     adata_1 = distr['p_1(a=0)']
     adata_2 = distr['p_2(a=0)']
     bdata_1 = distr['p_1(b=0)']
     bdata_2 = distr['p_2(b=0)']
-    
+
     if color == 'comm':
         c = cdata
         axes = 'alice'
@@ -165,20 +165,23 @@ def plot_comm_distr_vector(distr, type='spherical', color='comm', savename=None,
     elif color == 'bob_2':
         c = bdata_2
         axes = 'bob'
-    
+    if set_axes:
+        axes = set_axes
+
     if axes == 'alice':
-        xdata = distr.ax
-        ydata = distr.ay
-        zdata = distr.az
+        xdata, ydata, zdata = distr.ax, distr.ay, distr.az
     elif axes == 'bob':
-        xdata = distr.bx
-        ydata = distr.by
-        zdata = distr.bz
-    
+        xdata, ydata, zdata = distr.bx, distr.by, distr.bz
+    elif axes == 'lhv':
+        xdata, ydata, zdata = distr.L1x, distr.L1y, distr.L1z
+
     if type == 'scatter':
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
         img = ax.scatter(xdata, ydata, zdata, c=c, vmin=0, vmax=1)
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_zlabel('z')
         fig.subplots_adjust(right=0.8)
         cbar_ax = fig.add_axes([0.85, 0.15, 0.01, 0.7])
         fig.colorbar(img, cax=cbar_ax)
@@ -188,11 +191,34 @@ def plot_comm_distr_vector(distr, type='spherical', color='comm', savename=None,
         fig = plt.figure()
         ax = fig.add_subplot()
         img = ax.scatter(phi_data, theta_data, c=c, vmin=0, vmax=1)
+        ax.set_xlabel('phi')
+        ax.set_ylabel('theta')
         fig.subplots_adjust(right=0.8)
         cbar_ax = fig.add_axes([0.85, 0.15, 0.01, 0.7])
         fig.colorbar(img, cax=cbar_ax)
-        
+
     if savename:
         plt.savefig(savename)
     if show:
         plt.show()
+
+
+def map_distr_SV_party(model, vec_alice=[0, 0, 1], vec_bob=[0, 0, 1], n=4096):
+    """Generate the distribution for a vector model.
+
+    Args:
+        model : the model
+        vec_alice (list): 3D unit vector for Alice's input
+        vec_bob (list): 3D unit vector for Bob's input
+        n (int, optional): Number of random joint measurement settings. Defaults to 8192.
+
+    Returns:
+        dataframe: dataframe containing the distribution of the communication bit
+    """
+    config.number_of_LHV = 3
+    config.LHV_size = n
+    xdata = add_LHV(np.array([vec_alice+vec_bob, ]))
+    output = model.predict(xdata)
+    df = pd.DataFrame(np.concatenate((xdata, output), axis=1), columns=[
+                      'ax', 'ay', 'az', 'bx', 'by', 'bz', 'L1x', 'L1y', 'L1z', 'c', 'p_1(a=0)', 'p_1(a=1)', 'p_1(b=0)', 'p_1(b=1)', 'p_2(a=0)', 'p_2(a=1)', 'p_2(b=0)', 'p_2(b=1)'])
+    return df

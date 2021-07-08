@@ -28,7 +28,7 @@ class Interface:
 
         
         self.model_address = StringVar()
-        self.model_address.set("new-LHV\\pi-16_100_SV_singlet\\pi_16_model.h5")
+        self.model_address.set("new-LHV\\pi-16_150_SV_singlet\\pi_16_model.h5")
         self.distr = None
 
         # Load model

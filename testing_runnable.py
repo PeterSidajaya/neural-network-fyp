@@ -16,7 +16,7 @@ from distribution_generator import *
 from training import *
 from grapher import *
 
-folder_name = "new-LHV\\pi-16_100_SV_singlet\\"
+folder_name = "new-LHV\\pi-16_150_SV_singlet\\"
 state = qt.ket2dm(nme_singlet(np.pi/16))
 
 
@@ -24,35 +24,5 @@ config.LHV_type = "vector"
 model = keras.models.load_model(folder_name + "pi_16_model.h5", compile=False)
 # print(validate(model, state, comm=True))
 
-
-vec_z = np.array([0, 0, 1])
-vec_x = np.array([1, 0, 0])
-vec_y = np.array([0, 1, 0])
-type = 'spherical'
-show = False
-
-save_directory = 'new-LHV\\figures\\SV-singlet\\phi-sweep'
-os.mkdir(save_directory)
-os.mkdir(save_directory + '\\comm')
-os.mkdir(save_directory + '\\alice-1')
-os.mkdir(save_directory + '\\alice-2')
-os.mkdir(save_directory + '\\bob-1')
-os.mkdir(save_directory + '\\bob-2')
-
-j = 11
-for i in range(j):
-    vec_eq = np.cos(i/(j-1) * 2 * np.pi) * vec_x + np.sin(i/(j-1) * 2 * np.pi) * vec_y
-    vec = 1/np.sqrt(2) * vec_eq + 1/np.sqrt(2) * vec_z
-    distr = map_distr_SV(model, vec)
-    plot_comm_distr_vector(distr, type=type, color='comm',
-                           savename=save_directory+'\\comm\\'+str(i)+'-'+str(j-1)+'comm'+'.png', show=show)
-    plot_comm_distr_vector(distr, type=type, color='alice_1',
-                           savename=save_directory+'\\alice-1\\'+str(i)+'-'+str(j-1)+'alice-1'+'.png', show=show)
-    plot_comm_distr_vector(distr, type=type, color='alice_2',
-                           savename=save_directory+'\\alice-2\\'+str(i)+'-'+str(j-1)+'alice-2'+'.png', show=show)
-    plot_comm_distr_vector(distr, type=type, color='bob_1',
-                           savename=save_directory+'\\bob-1\\'+str(i)+'-'+str(j-1)+'bob-1'+'.png', show=show)
-    plot_comm_distr_vector(distr, type=type, color='bob_2',
-                           savename=save_directory+'\\bob-2\\'+str(i)+'-'+str(j-1)+'bob-2'+'.png', show=show)
-
-
+distr = map_distr_SV_party(model, vec_alice=[1, 0, 0])
+plot_comm_distr_vector(distr, type='scatter', color='comm', set_axes='alice', savename=None, show=True)

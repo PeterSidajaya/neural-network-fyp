@@ -6,7 +6,7 @@ This file contains all the settings and hyperparameters to be used for the neura
 
 
 LHV_size = 1000		        # number of LHV for evaluation
-training_size = 250		    # number of measurement settings for one training step
+training_size = 300		    # number of measurement settings for one training step
 number_of_LHV = 3		    # number of LHV (one means a single number)
 LHV_type = "vector"    # type of LHV ("gauss", "uniform")
 
@@ -18,7 +18,7 @@ activation_func = 'relu'            # activation function for NN
 activation_func_comm = 'sigmoid'
 
 optimizer = tf.keras.optimizers.Adam()		# just use Adam
-epochs = 10000								# should be enough
+epochs = 50 								# should be enough
 shuffle_epochs = 1                        # number of epochs before shuffling
 # cutoff training when loss dips below this value
 cutoff = 1e-4
