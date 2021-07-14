@@ -1,3 +1,4 @@
+from helper import convert_polar
 from distribution_generator import generate_mixed, generate_werner, CHSH_measurements
 from neural_network_util import build_model, build_model_comm, customLoss_multiple, comm_customLoss_multiple
 from preprocess import open_dataset, add_LHV
@@ -129,7 +130,7 @@ def train_model_comm(dataset, limit=None):
     return (min(score, min(history.history['loss'])), loss_history)
 
 
-def train(model, dataset, save=False, save_name=None, lr=None, loss=None):
+def train(model, dataset, save=False, save_name=None, lr=None, loss=None, polar=False):
     """Train a communication model
     """
     print("Starting training (with communication)...")
@@ -162,7 +163,11 @@ def train(model, dataset, save=False, save_name=None, lr=None, loss=None):
         rng.shuffle(data)
         x_train = data[:, :6]
         y_train = data[:, 6:]
-        x_train = add_LHV(x_train)                       	# Add the LHV
+        x_train = add_LHV(x_train)
+        if polar:
+            x_train = convert_polar(x_train)
+            config.number_of_LHV = 2
+        # Add the LHV
         # To match the size of the inputs
         y_train = np.repeat(y_train, LHV_size, axis=0)
         history = model.fit(x_train, y_train, batch_size=training_size*LHV_size,
