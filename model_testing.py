@@ -97,7 +97,7 @@ def evaluate(model, filename):
 
 
 def map_distr_TV(model, LHV_1, LHV_2, n=4096):
-    """Generate the distribution for a vector pair model.
+    """Generate the distribution for a vector pair model by fixing the LHVs.
 
     Args:
         model : the model
@@ -115,12 +115,12 @@ def map_distr_TV(model, LHV_1, LHV_2, n=4096):
         [vec_alice, vec_bob, np.repeat(LHVs, n, axis=0)], axis=1)
     output = model.predict(input)
     df = pd.DataFrame(np.concatenate((input, output), axis=1), columns=[
-                      'ax', 'ay', 'az', 'bx', 'by', 'bz', 'L1x', 'L1y', 'L1z', 'L2x', 'L2y', 'L2z', 'c', 'p_1(a=0)', 'p_1(a=1)', 'p_1(b=0)', 'p_1(b=1)', 'p_2(a=0)', 'p_2(a=1)', 'p_2(b=0)', 'p_2(b=1)'])
+                      'ax', 'ay', 'az', 'bx', 'by', 'bz', 'L1x', 'L1y', 'L1z', 'L2x', 'L2y', 'L2z', 'c', 'p_1(a=+1)', 'p_1(a=-1)', 'p_1(b=+1)', 'p_1(b=-1)', 'p_2(a=+1)', 'p_2(a=-1)', 'p_2(b=+1)', 'p_2(b=-1)'])
     return df
 
 
 def map_distr_SV(model, LHV_1, n=4096):
-    """Generate the distribution for a vector model.
+    """Generate the distribution for a single vector model by fixing the LHV vector.
 
     Args:
         model : the model
@@ -138,17 +138,17 @@ def map_distr_SV(model, LHV_1, n=4096):
         [vec_alice, vec_bob, np.repeat(LHVs, n, axis=0)], axis=1)
     output = model.predict(input)
     df = pd.DataFrame(np.concatenate((input, output), axis=1), columns=[
-                      'ax', 'ay', 'az', 'bx', 'by', 'bz', 'L1x', 'L1y', 'L1z', 'c', 'p_1(a=0)', 'p_1(a=1)', 'p_1(b=0)', 'p_1(b=1)', 'p_2(a=0)', 'p_2(a=1)', 'p_2(b=0)', 'p_2(b=1)'])
+                      'ax', 'ay', 'az', 'bx', 'by', 'bz', 'L1x', 'L1y', 'L1z', 'c', 'p_1(a=+1)', 'p_1(a=-1)', 'p_1(b=+1)', 'p_1(b=-1)', 'p_2(a=+1)', 'p_2(a=-1)', 'p_2(b=+1)', 'p_2(b=-1)'])
     return df
 
 
 def plot_comm_distr_vector(distr, type='spherical', color='comm', set_axes=None, savename=None, show=True):
     """Plot a comm distribution for a vector pair model"""
     cdata = distr.c
-    adata_1 = distr['p_1(a=0)']
-    adata_2 = distr['p_2(a=0)']
-    bdata_1 = distr['p_1(b=0)']
-    bdata_2 = distr['p_2(b=0)']
+    adata_1 = distr['p_1(a=-1)']
+    adata_2 = distr['p_2(a=-1)']
+    bdata_1 = distr['p_1(b=-1)']
+    bdata_2 = distr['p_2(b=-1)']
 
     if color == 'comm':
         c = cdata
@@ -204,7 +204,7 @@ def plot_comm_distr_vector(distr, type='spherical', color='comm', set_axes=None,
 
 
 def map_distr_SV_party(model, vec_alice=[0, 0, 1], vec_bob=[0, 0, 1], n=4096):
-    """Generate the distribution for a vector model.
+    """Generate the distribution for a vector model by fixing the input vectors.
 
     Args:
         model : the model
@@ -220,5 +220,34 @@ def map_distr_SV_party(model, vec_alice=[0, 0, 1], vec_bob=[0, 0, 1], n=4096):
     xdata = add_LHV(np.array([vec_alice+vec_bob, ]))
     output = model.predict(xdata)
     df = pd.DataFrame(np.concatenate((xdata, output), axis=1), columns=[
-                      'ax', 'ay', 'az', 'bx', 'by', 'bz', 'L1x', 'L1y', 'L1z', 'c', 'p_1(a=0)', 'p_1(a=1)', 'p_1(b=0)', 'p_1(b=1)', 'p_2(a=0)', 'p_2(a=1)', 'p_2(b=0)', 'p_2(b=1)'])
+                      'ax', 'ay', 'az', 'bx', 'by', 'bz', 'L1x', 'L1y', 'L1z', 'c', 'p_1(a=+1)', 'p_1(a=-1)', 'p_1(b=+1)', 'p_1(b=-1)', 'p_2(a=+1)', 'p_2(a=-1)', 'p_2(b=+1)', 'p_2(b=-1)'])
     return df
+
+
+def evaluate_marginals(model, theta, vec_alice, vec_bob, singlet=True):
+    config.training_size = 1
+    config.LHV_size = 5000
+    xdata = np.array([vec_alice+vec_bob, ])
+    output = predict(model, xdata)[0]
+    if singlet:
+        print('Marginal of Alice')
+        print('Predicted :', output[0]+output[1]-output[2]-output[3])
+        print('Theory    :', np.cos(2 * theta) * vec_alice[2])
+        print('Marginal of Bob')
+        print('Predicted :', output[0]-output[1]+output[2]-output[3])
+        print('Theory    :', -np.cos(2 * theta) * vec_bob[2])
+        print('Joint Marginal')
+        print('Predicted :', output[0]-output[1]-output[2]+output[3])
+        print('Theory    :', -vec_alice[2] * vec_bob[2] - np.sin(2 * theta)
+            * (vec_alice[0] * vec_bob[0] + vec_alice[1] * vec_bob[1]))
+    else:
+        print('Marginal of Alice')
+        print('Predicted :', output[0]+output[1]-output[2]-output[3])
+        print('Theory    :', np.cos(2 * theta) * vec_alice[2])
+        print('Marginal of Bob')
+        print('Predicted :', output[0]-output[1]+output[2]-output[3])
+        print('Theory    :', np.cos(2 * theta) * vec_bob[2])
+        print('Joint Marginal')
+        print('Predicted :', output[0]-output[1]-output[2]+output[3])
+        print('Theory    :', vec_alice[2] * vec_bob[2] + np.sin(2 * theta)
+            * (vec_alice[0] * vec_bob[0] - vec_alice[1] * vec_bob[1]))
