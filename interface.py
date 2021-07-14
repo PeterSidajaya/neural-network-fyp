@@ -17,16 +17,15 @@ class Interface:
         self.mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
         root.columnconfigure(0, weight=1)
         root.rowconfigure(0, weight=1)
-        
+
         # Model frame
         self.model_frame = ttk.Frame(self.mainframe, padding="3 3 12 12")
         self.model_frame.grid(row=0, sticky=(N, W, E, S))
-        
-        #TODO: Change this into settings
+
+        # TODO: Change this into settings
         self.state = qt.ket2dm(nme_state(np.pi/16))
         config.LHV_type = "vector"
 
-        
         self.model_address = StringVar()
         self.model_address.set("new-LHV\\pi-16_150_SV_singlet\\pi_16_model.h5")
         self.distr = None
@@ -41,7 +40,7 @@ class Interface:
 
         # LHV frame
         self.variable_frame = ttk.Frame(self.mainframe, padding="3 3 12 12")
-        self.variable_frame.grid(row=1, sticky=(N, W, E, S))        
+        self.variable_frame.grid(row=1, sticky=(N, W, E, S))
 
         # Titles
         ttk.Label(self.variable_frame, text="LHV vector").grid(
@@ -102,7 +101,8 @@ class Interface:
             column=5, row=1, sticky=(W, E))
         self.target = StringVar()
         self.target.set('comm')
-        target_box = ttk.Combobox(self.variable_frame, textvariable=self.target)
+        target_box = ttk.Combobox(
+            self.variable_frame, textvariable=self.target)
         target_box.state(['readonly'])
         target_box.grid(column=5, row=2)
         target_box['values'] = (
@@ -113,7 +113,8 @@ class Interface:
             column=6, row=1, sticky=(W, E))
         self.plot_type = StringVar()
         self.plot_type.set('3d')
-        target_box = ttk.Combobox(self.variable_frame, textvariable=self.plot_type)
+        target_box = ttk.Combobox(
+            self.variable_frame, textvariable=self.plot_type)
         target_box.state(['readonly'])
         target_box.grid(column=6, row=2)
         target_box['values'] = (
@@ -146,16 +147,25 @@ class Interface:
                    np.sin(self.phi.get()) * np.sin(self.theta.get()),
                    np.cos(self.theta.get())]
         self.distr = map_distr_SV(self.model, vec)
-    
+
     def load(self, *args):
-        self.model = keras.models.load_model(self.model_address.get(), compile=False)
+        self.model = keras.models.load_model(
+            self.model_address.get(), compile=False)
 
     def plot(self, *args):
+        self.calculate_distr()
         cdata = self.distr.c
-        adata_1 = self.distr['p_1(a=0)']
-        adata_2 = self.distr['p_2(a=0)']
-        bdata_1 = self.distr['p_1(b=0)']
-        bdata_2 = self.distr['p_2(b=0)']
+        adata_1 = self.distr['p_1(a=+1)']
+        adata_2 = self.distr['p_2(a=+1)']
+        bdata_1 = self.distr['p_1(b=+1)']
+        bdata_2 = self.distr['p_2(b=+1)']
+        if self.data_type.get() == 'cartesian':
+            self.normalize()
+            vec = [self.x.get(), self.y.get(), self.z.get()]
+        if self.data_type.get() == 'spherical':
+            vec = [np.cos(self.phi.get()) * np.sin(self.theta.get()),
+                   np.sin(self.phi.get()) * np.sin(self.theta.get()),
+                   np.cos(self.theta.get())]
 
         if self.target.get() == 'comm':
             c = cdata
@@ -186,6 +196,11 @@ class Interface:
             fig = Figure(figsize=(5, 4), dpi=100)
             ax = fig.add_subplot(111, projection='3d')
             img = ax.scatter(xdata, ydata, zdata, c=c, vmin=0, vmax=1)
+            ax.plot([0, 1.25*vec[0]], [0, 1.25*vec[1]],
+                    [0, 1.25*vec[2]], 'r-o', lw=2)
+            ax.set_xlabel('x')
+            ax.set_ylabel('y')
+            ax.set_zlabel('z')
             fig.subplots_adjust(right=0.8)
             cbar_ax = fig.add_axes([0.85, 0.15, 0.01, 0.7])
             fig.colorbar(img, cax=cbar_ax)
@@ -195,6 +210,10 @@ class Interface:
             fig = Figure(figsize=(5, 4), dpi=100)
             ax = fig.add_subplot(111)
             img = ax.scatter(phi_data, theta_data, c=c, vmin=0, vmax=1)
+            ax.scatter(np.arctan2(vec[1], vec[0]),
+                       np.arccos(vec[2]), c='r', s=20)
+            ax.set_xlabel('phi')
+            ax.set_ylabel('theta')
             fig.subplots_adjust(right=0.8)
             cbar_ax = fig.add_axes([0.85, 0.15, 0.01, 0.7])
             fig.colorbar(img, cax=cbar_ax)
