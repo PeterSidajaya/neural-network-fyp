@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import random
 import config
-from distribution_generator import random_vector
+from distribution_generator import random_unit_vector, random_semicircle_vector
 
 """This file contains all the functions needed to preprocess the datasets.
 """
@@ -57,11 +57,15 @@ def add_LHV(input_array):
             LHV_per_setting * input_size * config.number_of_LHV)]).reshape(LHV_per_setting * input_size, -1)
     elif config.LHV_type == "vector":
         config.number_of_LHV = 3
-        LHV_list = np.array([random_vector(3) for i in range(
+        LHV_list = np.array([random_unit_vector(3) for i in range(
             LHV_per_setting * input_size)])
     elif config.LHV_type == "vector pair":
         config.number_of_LHV = 6
-        LHV_list = np.array([np.concatenate((random_vector(3), random_vector(3))) for i in range(
+        LHV_list = np.array([np.concatenate((random_unit_vector(3), random_unit_vector(3))) for i in range(
+            LHV_per_setting * input_size)])
+    elif config.LHV_type == "symmetry vector":
+        config.number_of_LHV = 2
+        LHV_list = np.array([random_semicircle_vector() for i in range(
             LHV_per_setting * input_size)])
     else:
         raise ValueError('LHV type is not recognized.')

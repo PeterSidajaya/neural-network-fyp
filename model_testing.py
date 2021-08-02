@@ -125,20 +125,19 @@ def map_distr_SV(model, LHV_1, n=4096):
     Args:
         model : the model
         LHV_1 (list): 3D unit vector for the first LHV
-        LHV_2 (list): 3D unit vector for the second LHV
         n (int, optional): Number of random joint measurement settings. Defaults to 8192.
 
     Returns:
         dataframe: dataframe containing the distribution of the communication bit
     """
     vec_alice, vec_bob = random_joint_vectors(n)
-    LHVs = np.concatenate([LHV_1, ], axis=0).reshape(1, 3)
-    config.number_of_LHV = 3
+    LHVs = np.concatenate([LHV_1, ], axis=0).reshape(1, 2)
+    config.number_of_LHV = 2
     input = np.concatenate(
         [vec_alice, vec_bob, np.repeat(LHVs, n, axis=0)], axis=1)
     output = model.predict(input)
     df = pd.DataFrame(np.concatenate((input, output), axis=1), columns=[
-                      'ax', 'ay', 'az', 'bx', 'by', 'bz', 'L1x', 'L1y', 'L1z', 'c', 'p_1(a=+1)', 'p_1(a=-1)', 'p_1(b=+1)', 'p_1(b=-1)', 'p_2(a=+1)', 'p_2(a=-1)', 'p_2(b=+1)', 'p_2(b=-1)'])
+                      'ax', 'ay', 'az', 'bx', 'by', 'bz', 'L1x', 'L1z', 'c', 'p_1(a=+1)', 'p_1(a=-1)', 'p_1(b=+1)', 'p_1(b=-1)', 'p_2(a=+1)', 'p_2(a=-1)', 'p_2(b=+1)', 'p_2(b=-1)'])
     return df
 
 

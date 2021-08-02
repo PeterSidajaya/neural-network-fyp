@@ -27,7 +27,7 @@ class Interface:
         config.LHV_type = "vector"
 
         self.model_address = StringVar()
-        self.model_address.set("new-LHV\\pi-16_150_SV_singlet\\pi_16_model.h5")
+        self.model_address.set("symmetry\\pi-16_200_SV_singlet\\pi_16_model.h5")
         self.distr = None
 
         # Load model
@@ -51,38 +51,26 @@ class Interface:
         # LHV labels
         ttk.Label(self.variable_frame, text="x").grid(
             column=0, row=1, sticky=E)
-        ttk.Label(self.variable_frame, text="y").grid(
-            column=0, row=2, sticky=E)
         ttk.Label(self.variable_frame, text="z").grid(
-            column=0, row=3, sticky=E)
+            column=0, row=2, sticky=E)
         ttk.Label(self.variable_frame, text="theta").grid(
             column=2, row=1, sticky=E)
-        ttk.Label(self.variable_frame, text="phi").grid(
-            column=2, row=2, sticky=E)
 
         # LHV inputs (cartesian)
         self.x = DoubleVar()
-        self.y = DoubleVar()
         self.z = DoubleVar()
         x_entry = ttk.Entry(
             self.variable_frame, width=5, textvariable=self.x)
         x_entry.grid(column=1, row=1, sticky=(W, E))
-        y_entry = ttk.Entry(
-            self.variable_frame, width=5, textvariable=self.y)
-        y_entry.grid(column=1, row=2, sticky=(W, E))
         z_entry = ttk.Entry(
             self.variable_frame, width=5, textvariable=self.z)
-        z_entry.grid(column=1, row=3, sticky=(W, E))
+        z_entry.grid(column=1, row=2, sticky=(W, E))
 
         # LHV inputs (spherical)
         self.theta = DoubleVar()
-        self.phi = DoubleVar()
         theta_entry = ttk.Entry(
             self.variable_frame, width=5, textvariable=self.theta)
         theta_entry.grid(column=3, row=1, sticky=(W, E))
-        phi_entry = ttk.Entry(
-            self.variable_frame, width=5, textvariable=self.phi)
-        phi_entry.grid(column=3, row=2, sticky=(W, E))
 
         # Spherical or cartesian
         ttk.Label(self.variable_frame, text='Data type').grid(
@@ -141,10 +129,9 @@ class Interface:
     def calculate_distr(self, *args):
         if self.data_type.get() == 'cartesian':
             self.normalize()
-            vec = [self.x.get(), self.y.get(), self.z.get()]
+            vec = [self.x.get(), self.z.get()]
         if self.data_type.get() == 'spherical':
-            vec = [np.cos(self.phi.get()) * np.sin(self.theta.get()),
-                   np.sin(self.phi.get()) * np.sin(self.theta.get()),
+            vec = [np.sin(self.theta.get()),
                    np.cos(self.theta.get())]
         self.distr = map_distr_SV(self.model, vec)
 
@@ -161,10 +148,9 @@ class Interface:
         bdata_2 = self.distr['p_2(b=+1)']
         if self.data_type.get() == 'cartesian':
             self.normalize()
-            vec = [self.x.get(), self.y.get(), self.z.get()]
+            vec = [self.x.get(), self.z.get()]
         if self.data_type.get() == 'spherical':
-            vec = [np.cos(self.phi.get()) * np.sin(self.theta.get()),
-                   np.sin(self.phi.get()) * np.sin(self.theta.get()),
+            vec = [np.sin(self.theta.get()),
                    np.cos(self.theta.get())]
 
         if self.target.get() == 'comm':
@@ -196,8 +182,8 @@ class Interface:
             fig = Figure(figsize=(5, 4), dpi=100)
             ax = fig.add_subplot(111, projection='3d')
             img = ax.scatter(xdata, ydata, zdata, c=c, vmin=0, vmax=1)
-            ax.plot([0, 1.25*vec[0]], [0, 1.25*vec[1]],
-                    [0, 1.25*vec[2]], 'r-o', lw=2)
+            ax.plot([0, 1.25*vec[0]], [0, 0],
+                    [0, 1.25*vec[1]], 'r-o', lw=2)
             ax.set_xlabel('x')
             ax.set_ylabel('y')
             ax.set_zlabel('z')
@@ -210,8 +196,8 @@ class Interface:
             fig = Figure(figsize=(5, 4), dpi=100)
             ax = fig.add_subplot(111)
             img = ax.scatter(phi_data, theta_data, c=c, vmin=0, vmax=1)
-            ax.scatter(np.arctan2(vec[1], vec[0]),
-                       np.arccos(vec[2]), c='r', s=20)
+            ax.scatter(np.arctan2(0, vec[0]),
+                       np.arccos(vec[1]), c='r', s=20)
             ax.set_xlabel('phi')
             ax.set_ylabel('theta')
             fig.subplots_adjust(right=0.8)
@@ -234,11 +220,9 @@ class Interface:
 
     def normalize(self, *args):
         x = self.x.get()
-        y = self.y.get()
         z = self.z.get()
-        norm = np.sqrt(x**2 + y**2 + z**2)
-        self.x.set(x/norm)
-        self.y.set(y/norm)
+        norm = np.sqrt(x**2 + z**2)
+        self.x.set(abs(x/norm))
         self.z.set(z/norm)
 
 

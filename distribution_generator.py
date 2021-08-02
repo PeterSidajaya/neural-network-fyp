@@ -6,12 +6,20 @@ import math
 """This file contains the functions needed to create the datasets."""
 
 
-def random_vector(n):
-    """Generate a random vector of n dimensions."""
+def random_unit_vector(n):
+    """Generate a random unit vector of n dimensions."""
     components = [np.random.normal() for i in range(n)]
     r = math.sqrt(sum(x*x for x in components))
     v = [x/r for x in components]
     return v
+
+
+def random_semicircle_vector():
+    """Generate a random vector of n dimensions."""
+    components = [np.random.normal() for i in range(2)]
+    r = math.sqrt(sum(x*x for x in components))
+    v = [x/r for x in components]
+    return [abs(v[0]), v[1]]
 
 
 def operator_dot(vector):
@@ -35,8 +43,8 @@ def random_joint_vectors(n):
     """Generate a list of random 3D unit vectors."""
     a, b = [], []
     for i in range(n):
-        vector_a = random_vector(3)
-        vector_b = random_vector(3)
+        vector_a = random_unit_vector(3)
+        vector_b = random_unit_vector(3)
         a.append(vector_a)
         b.append(vector_b)
     return (a, b)
@@ -55,8 +63,8 @@ def generate_dataset(state, n):
     a, b, p = [], [], []
     ct = 0
     for i in range(n - 2):
-        vector_a = random_vector(3)
-        vector_b = random_vector(3)
+        vector_a = random_unit_vector(3)
+        vector_b = random_unit_vector(3)
         prob = probability(state, vector_a, vector_b)
         a.append(vector_a)
         b.append(vector_b)
