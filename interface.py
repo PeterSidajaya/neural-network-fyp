@@ -27,7 +27,8 @@ class Interface:
         config.LHV_type = "vector"
 
         self.model_address = StringVar()
-        self.model_address.set("symmetry\\pi-16_200_SV_singlet\\pi_16_model.h5")
+        self.model_address.set(
+            "symmetry\\pi-16_200_SV_singlet\\pi_16_model.h5")
         self.distr = None
 
         # Load model
@@ -39,101 +40,187 @@ class Interface:
             column=5, row=0, sticky=(W, E))
 
         # LHV frame
-        self.variable_frame = ttk.Frame(self.mainframe, padding="3 3 12 12")
-        self.variable_frame.grid(row=1, sticky=(N, W, E, S))
+        self.lhv_frame = ttk.Frame(self.mainframe, padding="3 3 12 12")
+        self.lhv_frame.grid(row=1, sticky=(N, W, E, S))
 
-        # Titles
-        ttk.Label(self.variable_frame, text="LHV vector").grid(
-            column=0, row=0, columnspan=4, sticky=(W, E))
-        ttk.Label(self.variable_frame, text="Settings").grid(
-            column=4, row=0, columnspan=4, sticky=(W, E))
+        self.lhv_type_frame = ttk.Frame(self.lhv_frame, padding="3 3 12 12")
+        self.lhv_type_frame.grid(row=0, column=0, sticky=(N, W, E, S))
 
-        # LHV labels
-        ttk.Label(self.variable_frame, text="x").grid(
-            column=0, row=1, sticky=E)
-        ttk.Label(self.variable_frame, text="z").grid(
-            column=0, row=2, sticky=E)
-        ttk.Label(self.variable_frame, text="theta").grid(
-            column=2, row=1, sticky=E)
+        self.lhv_input_frame = ttk.Frame(self.lhv_frame, padding="3 3 12 12")
+        self.lhv_input_frame.grid(row=0, column=1, sticky=(N, W, E, S))
 
-        # LHV inputs (cartesian)
-        self.x = DoubleVar()
-        self.z = DoubleVar()
-        x_entry = ttk.Entry(
-            self.variable_frame, width=5, textvariable=self.x)
-        x_entry.grid(column=1, row=1, sticky=(W, E))
-        z_entry = ttk.Entry(
-            self.variable_frame, width=5, textvariable=self.z)
-        z_entry.grid(column=1, row=2, sticky=(W, E))
+        # LHV settings
+        ttk.Label(self.lhv_type_frame, text="LHV Type").grid(
+            column=0, row=0, sticky=(W, E))
+        self.lhv_type = StringVar()
+        self.lhv_type.set('single vector')
+        one_vector = ttk.Radiobutton(
+            self.lhv_type_frame, text='single 3D vector', variable=self.lhv_type,
+            value='single vector', command=self.update_lhv_type)
+        semicircle = ttk.Radiobutton(
+            self.lhv_type_frame, text='semicircle vector', variable=self.lhv_type,
+            value='semicircle', command=self.update_lhv_type)
+        one_vector.grid(column=1, row=0)
+        semicircle.grid(column=1, row=1)
 
-        # LHV inputs (spherical)
-        self.theta = DoubleVar()
-        theta_entry = ttk.Entry(
-            self.variable_frame, width=5, textvariable=self.theta)
-        theta_entry.grid(column=3, row=1, sticky=(W, E))
+        self.update_lhv_type()
 
-        # Spherical or cartesian
-        ttk.Label(self.variable_frame, text='Data type').grid(
-            column=4, row=1, sticky=(W, E))
-        self.data_type = StringVar()
-        self.data_type.set('cartesian')
-        cartesian = ttk.Radiobutton(
-            self.variable_frame, text='cartesian', variable=self.data_type, value='cartesian')
-        spherical = ttk.Radiobutton(
-            self.variable_frame, text='spherical', variable=self.data_type, value='spherical')
-        cartesian.grid(column=4, row=2)
-        spherical.grid(column=4, row=3)
+        # Plot settings frame
+        self.plot_settings_frame = ttk.Frame(
+            self.mainframe, padding="3 3 12 12")
+        self.plot_settings_frame.grid(row=2, sticky=(N, W, E, S))
+        ttk.Label(self.plot_settings_frame, text="Settings").grid(
+            column=0, row=0, columnspan=3, sticky=(W, E))
 
         # Plot who
-        ttk.Label(self.variable_frame, text='Target plot').grid(
-            column=5, row=1, sticky=(W, E))
+        ttk.Label(self.plot_settings_frame, text='Target plot').grid(
+            column=0, row=1, sticky=(W, E))
         self.target = StringVar()
         self.target.set('comm')
         target_box = ttk.Combobox(
-            self.variable_frame, textvariable=self.target)
+            self.plot_settings_frame, textvariable=self.target)
         target_box.state(['readonly'])
-        target_box.grid(column=5, row=2)
+        target_box.grid(column=0, row=2)
         target_box['values'] = (
             'comm', 'alice_1', 'alice_2', 'bob_1', 'bob_2')
 
         # Plot type
-        ttk.Label(self.variable_frame, text='Plot type').grid(
-            column=6, row=1, sticky=(W, E))
+        ttk.Label(self.plot_settings_frame, text='Plot type').grid(
+            column=1, row=1, sticky=(W, E))
         self.plot_type = StringVar()
         self.plot_type.set('3d')
         target_box = ttk.Combobox(
-            self.variable_frame, textvariable=self.plot_type)
+            self.plot_settings_frame, textvariable=self.plot_type)
         target_box.state(['readonly'])
-        target_box.grid(column=6, row=2)
+        target_box.grid(column=1, row=2)
         target_box['values'] = (
             '3d', 'spherical')
 
         # Buttons
-        ttk.Button(self.variable_frame, text="Calculate", command=self.calculate_distr).grid(
-            column=3, row=3, sticky=W)
-        ttk.Button(self.variable_frame, text="Plot", command=self.plot).grid(
-            column=6, row=3, sticky=W)
+        ttk.Button(self.plot_settings_frame, text="Calculate", command=self.calculate_distr).grid(
+            column=2, row=1, sticky=W)
+        ttk.Button(self.plot_settings_frame, text="Plot", command=self.plot).grid(
+            column=2, row=2, sticky=W)
 
         # Plotframe
         self.plot_frame = ttk.Frame(self.mainframe, padding="3 3 12 12")
-        self.plot_frame.grid(row=2, sticky=(N, W, E, S))
+        self.plot_frame.grid(row=3, sticky=(N, W, E, S))
 
         for child in self.mainframe.winfo_children():
             child.grid_configure(padx=5, pady=5)
             for grandchild in child.winfo_children():
                 grandchild.grid_configure(padx=5, pady=5)
 
-        x_entry.focus()
         root.bind("<Return>", self.plot)
 
+    def update_lhv_type(self, *args):
+        self.lhv_input_frame.grid_forget()
+        self.lhv_input_frame.destroy()
+        self.lhv_input_frame = ttk.Frame(self.lhv_frame, padding="3 3 12 12")
+        self.lhv_input_frame.grid(row=0, column=1, sticky=(N, W, E, S))
+        if self.lhv_type.get() == "single vector":
+            # LHV labels
+            ttk.Label(self.lhv_input_frame, text="x").grid(
+                column=0, row=1, sticky=E)
+            ttk.Label(self.lhv_input_frame, text="y").grid(
+                column=0, row=2, sticky=E)
+            ttk.Label(self.lhv_input_frame, text="z").grid(
+                column=0, row=3, sticky=E)
+            ttk.Label(self.lhv_input_frame, text="theta").grid(
+                column=2, row=1, sticky=E)
+            ttk.Label(self.lhv_input_frame, text="phi").grid(
+                column=2, row=2, sticky=E)
+
+            # LHV inputs (cartesian)
+            self.x = DoubleVar()
+            self.y = DoubleVar()
+            self.z = DoubleVar()
+            x_entry = ttk.Entry(
+                self.lhv_input_frame, width=5, textvariable=self.x)
+            x_entry.grid(column=1, row=1, sticky=(W, E))
+            y_entry = ttk.Entry(
+                self.lhv_input_frame, width=5, textvariable=self.y)
+            y_entry.grid(column=1, row=2, sticky=(W, E))
+            z_entry = ttk.Entry(
+                self.lhv_input_frame, width=5, textvariable=self.z)
+            z_entry.grid(column=1, row=3, sticky=(W, E))
+
+            # LHV inputs (spherical)
+            self.theta = DoubleVar()
+            self.phi = DoubleVar()
+            theta_entry = ttk.Entry(
+                self.lhv_input_frame, width=5, textvariable=self.theta)
+            theta_entry.grid(column=3, row=1, sticky=(W, E))
+            phi_entry = ttk.Entry(
+                self.lhv_input_frame, width=5, textvariable=self.phi)
+            phi_entry.grid(column=3, row=2, sticky=(W, E))
+
+            # Spherical or cartesian
+            ttk.Label(self.lhv_input_frame, text='Data type').grid(
+                column=4, row=1, sticky=(W, E))
+            self.data_type = StringVar()
+            self.data_type.set('cartesian')
+            cartesian = ttk.Radiobutton(
+                self.lhv_input_frame, text='cartesian', variable=self.data_type, value='cartesian')
+            spherical = ttk.Radiobutton(
+                self.lhv_input_frame, text='spherical', variable=self.data_type, value='spherical')
+            cartesian.grid(column=4, row=2)
+            spherical.grid(column=4, row=3)
+
+        if self.lhv_type.get() == "semicircle":
+            # LHV labels
+            ttk.Label(self.lhv_input_frame, text="x").grid(
+                column=0, row=1, sticky=E)
+            ttk.Label(self.lhv_input_frame, text="z").grid(
+                column=0, row=2, sticky=E)
+            ttk.Label(self.lhv_input_frame, text="theta").grid(
+                column=2, row=1, sticky=E)
+
+            # LHV inputs (cartesian)
+            self.x = DoubleVar()
+            self.z = DoubleVar()
+            x_entry = ttk.Entry(
+                self.lhv_input_frame, width=5, textvariable=self.x)
+            x_entry.grid(column=1, row=1, sticky=(W, E))
+            z_entry = ttk.Entry(
+                self.lhv_input_frame, width=5, textvariable=self.z)
+            z_entry.grid(column=1, row=2, sticky=(W, E))
+
+            # LHV inputs (spherical)
+            self.theta = DoubleVar()
+            theta_entry = ttk.Entry(
+                self.lhv_input_frame, width=5, textvariable=self.theta)
+            theta_entry.grid(column=3, row=1, sticky=(W, E))
+
+            # Spherical or cartesian
+            ttk.Label(self.lhv_input_frame, text='Data type').grid(
+                column=4, row=1, sticky=(W, E))
+            self.data_type = StringVar()
+            self.data_type.set('cartesian')
+            cartesian = ttk.Radiobutton(
+                self.lhv_input_frame, text='cartesian', variable=self.data_type, value='cartesian')
+            spherical = ttk.Radiobutton(
+                self.lhv_input_frame, text='spherical', variable=self.data_type, value='spherical')
+            cartesian.grid(column=4, row=2)
+            spherical.grid(column=4, row=3)
+
     def calculate_distr(self, *args):
-        if self.data_type.get() == 'cartesian':
-            self.normalize()
-            vec = [self.x.get(), self.z.get()]
-        if self.data_type.get() == 'spherical':
-            vec = [np.sin(self.theta.get()),
-                   np.cos(self.theta.get())]
-        self.distr = map_distr_SV(self.model, vec)
+        if self.lhv_type.get() == 'semicircle':
+            if self.data_type.get() == 'cartesian':
+                self.normalize()
+                vec = [self.x.get(), self.z.get()]
+            if self.data_type.get() == 'spherical':
+                vec = [np.sin(self.theta.get()),
+                       np.cos(self.theta.get())]
+        elif self.lhv_type.get() == 'single vector':
+            if self.data_type.get() == 'cartesian':
+                self.normalize()
+                vec = [self.x.get(), self.y.get(), self.z.get()]
+            if self.data_type.get() == 'spherical':
+                vec = [np.cos(self.phi.get()) * np.sin(self.theta.get()),
+                    np.sin(self.phi.get()) * np.sin(self.theta.get()),
+                    np.cos(self.theta.get())]
+        self.distr = map_distr(self.model, vec, type=self.lhv_type.get())
 
     def load(self, *args):
         self.model = keras.models.load_model(
@@ -206,7 +293,7 @@ class Interface:
 
         # Plotframe
         self.plot_frame = ttk.Frame(self.mainframe, padding="3 3 12 12")
-        self.plot_frame.grid(row=2, sticky=(N, W, E, S))
+        self.plot_frame.grid(row=3, sticky=(N, W, E, S))
 
         canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
         canvas.draw()
@@ -219,11 +306,20 @@ class Interface:
             canvas.mpl_connect('motion_notify_event', ax._on_move)
 
     def normalize(self, *args):
-        x = self.x.get()
-        z = self.z.get()
-        norm = np.sqrt(x**2 + z**2)
-        self.x.set(abs(x/norm))
-        self.z.set(z/norm)
+        if self.lhv_type.get() == 'semicircle':
+            x = self.x.get()
+            z = self.z.get()
+            norm = np.sqrt(x**2 + z**2)
+            self.x.set(abs(x/norm))
+            self.z.set(z/norm)
+        elif self.lhv_type.get() == 'single vector':
+            x = self.x.get()
+            y = self.y.get()
+            z = self.z.get()
+            norm = np.sqrt(x**2 + y**2 + z**2)
+            self.x.set(x/norm)
+            self.y.set(y/norm)
+            self.z.set(z/norm)
 
 
 root = Tk()

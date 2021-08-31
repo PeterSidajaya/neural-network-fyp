@@ -19,7 +19,7 @@ from grapher import *
 config.shuffle_epochs = 1
 config.epochs = 50
 
-folder_name = "symmetry\\pi-16_200_SV_singlet\\"
+folder_name = "symmetry\\pi-16_250_SV_singlet\\"
 state = qt.ket2dm(nme_singlet(np.pi/16))
 
 
@@ -33,13 +33,13 @@ minimas = []
 histories = []
 K.clear_session()
 
-model = keras.models.load_model("symmetry\\pi-16_150_SV_singlet\\pi_16_model.h5", compile=False)
+model = keras.models.load_model("symmetry\\pi-16_200_SV_singlet\\pi_16_model.h5", compile=False)
 
 config.epochs = 1
 train(model, filename, save=False, lr=1e-6, loss=comm_customLoss_multiple)
 
 config.epochs = 50
-with open('symmetry\\pi-16_150_SV_singlet\\optimizer.pkl', 'rb') as f:
+with open('symmetry\\pi-16_200_SV_singlet\\optimizer.pkl', 'rb') as f:
     weight_values = pickle.load(f)
 model.optimizer.set_weights(weight_values)
 minima, history = train(model, filename, save=True,

@@ -55,7 +55,7 @@ def add_LHV(input_array):
         config.number_of_LHV = 1
         LHV_list = np.array([random.uniform(0.0, 1.0) for i in range(
             LHV_per_setting * input_size * config.number_of_LHV)]).reshape(LHV_per_setting * input_size, -1)
-    elif config.LHV_type == "vector":
+    elif config.LHV_type == "single vector":
         config.number_of_LHV = 3
         LHV_list = np.array([random_unit_vector(3) for i in range(
             LHV_per_setting * input_size)])
@@ -63,7 +63,7 @@ def add_LHV(input_array):
         config.number_of_LHV = 6
         LHV_list = np.array([np.concatenate((random_unit_vector(3), random_unit_vector(3))) for i in range(
             LHV_per_setting * input_size)])
-    elif config.LHV_type == "symmetry vector":
+    elif config.LHV_type == "semicircle":
         config.number_of_LHV = 2
         LHV_list = np.array([random_semicircle_vector() for i in range(
             LHV_per_setting * input_size)])
