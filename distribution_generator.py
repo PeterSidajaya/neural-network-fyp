@@ -15,7 +15,7 @@ def random_unit_vector(n):
 
 
 def random_semicircle_vector():
-    """Generate a random vector of n dimensions."""
+    """Generate a 2D random vector from a semicircle."""
     components = [np.random.normal() for i in range(2)]
     r = math.sqrt(sum(x*x for x in components))
     v = [x/r for x in components]

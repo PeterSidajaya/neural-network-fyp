@@ -126,7 +126,8 @@ def map_distr(model, LHV_1, n=4096, type="single vector"):
     Args:
         model : the model
         LHV_1 (list): 3D unit vector for the first LHV
-        n (int, optional): Number of random joint measurement settings. Defaults to 8192.
+        n (int, optional): Number of random joint measurement settings. Defaults to 4096.
+        type (str, optional): type of LHV to be used. Defaults to "single vector".
 
     Returns:
         dataframe: dataframe containing the distribution of the communication bit
@@ -226,7 +227,7 @@ def map_distr_SV_party(model, vec_alice=[0, 0, 1], vec_bob=[0, 0, 1], n=4096):
         model : the model
         vec_alice (list): 3D unit vector for Alice's input
         vec_bob (list): 3D unit vector for Bob's input
-        n (int, optional): Number of random joint measurement settings. Defaults to 8192.
+        n (int, optional): Number of LHVs. Defaults to 4096.
 
     Returns:
         dataframe: dataframe containing the distribution of the communication bit
