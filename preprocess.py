@@ -46,6 +46,7 @@ def add_LHV(input_array):
     """
     LHV_per_setting = config.LHV_size
     input_size = input_array.shape[0]
+    print(LHV_per_setting * input_size)
     input_array = np.repeat(input_array, LHV_per_setting, axis=0)
     if config.LHV_type == "gauss":
         config.number_of_LHV = 1
@@ -63,10 +64,34 @@ def add_LHV(input_array):
         config.number_of_LHV = 6
         LHV_list = np.array([np.concatenate((random_unit_vector(3), random_unit_vector(3))) for i in range(
             LHV_per_setting * input_size)])
+    elif config.LHV_type == "fast vector pair":
+        config.number_of_LHV = 6
+        LHV_list = np.array([np.concatenate((random_unit_vector(3), random_unit_vector(3))) for i in range(
+            LHV_per_setting)])
+        LHV_list = np.tile(LHV_list, (input_size, 1))
     elif config.LHV_type == "semicircle":
         config.number_of_LHV = 2
-        LHV_list = np.array([random_semicircle_vector() for i in range(
-            LHV_per_setting * input_size)])
+        LHV_list = np.array([random_semicircle_vector() for i in range(LHV_per_setting * input_size)])
+    elif config.LHV_type == "vector pair dot":
+        config.number_of_LHV = 6
+        LHV_list = []
+        LHV_sample_list = np.array([np.concatenate((random_unit_vector(3), random_unit_vector(3))) for i in range(
+            LHV_per_setting)])
+        for i in range(LHV_per_setting * input_size):
+            l_1 = LHV_sample_list[i % LHV_per_setting,:3]
+            l_2 = LHV_sample_list[i % LHV_per_setting,3:]
+            dot_alice_1 = dot(l_1, input_array[i, :3])
+            dot_alice_2 = dot(l_2, input_array[i, :3])
+            dot_bob_1 = dot(l_1, input_array[i, 3:])
+            dot_bob_2 = dot(l_2, input_array[i, 3:])
+            LHV_list.append(np.concatenate((l_1, l_2, [dot_alice_1, dot_alice_2, dot_bob_1, dot_bob_2])))
+        LHV_list = np.array(LHV_list)
     else:
         raise ValueError('LHV type is not recognized.')
     return np.concatenate((input_array, LHV_list), axis=1)
+
+def dot(vec_1, vec_2):
+    sum = 0
+    for i in range(3):
+        sum += vec_1[i] * vec_2[i]
+    return sum

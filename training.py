@@ -138,8 +138,7 @@ def train(model, dataset, save=False, save_name=None, lr=None, loss=None):
     LHV_size = config.LHV_size
     training_size = config.training_size
     number_of_measurements = data.shape[0]
-
-    print("Generating model...")
+    
     K.clear_session()
 
     if lr:
@@ -162,14 +161,19 @@ def train(model, dataset, save=False, save_name=None, lr=None, loss=None):
         rng.shuffle(data)
         x_train = data[:, :6]
         y_train = data[:, 6:]
+        
+        print("Adding LHV...")
         x_train = add_LHV(x_train)                       	# Add the LHV
         # To match the size of the inputs
         y_train = np.repeat(y_train, LHV_size, axis=0)
+        
+        print("Preparation finished, starting training...")
         history = model.fit(x_train, y_train, batch_size=training_size*LHV_size,
                             epochs=config.shuffle_epochs, verbose=1, shuffle=False)
         loss_history += history.history['loss']
         if history.history['loss'][-1] < config.cutoff:          	# Cutoff at 1e-4
             break
+
     # score = model.evaluate(x=x_train, y=y_train,
     #                        batch_size=data.shape[0]*LHV_size)
     if save:
