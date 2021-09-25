@@ -154,12 +154,14 @@ def map_distr(model, LHV_1, n=4096, type="single vector"):
 
 
 def plot_comm_distr_vector(distr, type='spherical', color='comm', set_axes=None, savename=None, show=True, fix_color=True):
-    """Plot a comm distribution for a vector pair model"""
+    """Plot a comm distribution"""
     cdata = distr.c
     adata_1 = distr['p_1(a=+1)']
     adata_2 = distr['p_2(a=+1)']
     bdata_1 = distr['p_1(b=+1)']
     bdata_2 = distr['p_2(b=+1)']
+    l1x, l1y, l1z = distr.L1x, distr.L1y, distr.L1z
+    l2x, l2y, l2z = distr.L2x, distr.L2y, distr.L2z
 
     if color == 'comm':
         c = cdata
@@ -208,6 +210,14 @@ def plot_comm_distr_vector(distr, type='spherical', color='comm', set_axes=None,
             img = ax.scatter(phi_data, theta_data, c=c, vmin=0, vmax=1)
         else:
             img = ax.scatter(phi_data, theta_data, c=c)
+            
+        l1theta = np.arccos(l1z)
+        l1phi = np.arctan2(l1y, l1x)
+        l2theta = np.arccos(l2z)
+        l2phi = np.arctan2(l2y, l2x)
+        ax.scatter(l1phi, l1theta, color='red')
+        ax.scatter(l2phi, l2theta, color='blue')
+        
         ax.set_xlabel('phi')
         ax.set_ylabel('theta')
         fig.subplots_adjust(right=0.8)

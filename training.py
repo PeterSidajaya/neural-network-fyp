@@ -10,6 +10,64 @@ import tensorflow as tf
 import config
 
 
+def train(model, dataset, save=False, save_name=None, lr=None, loss=None):
+    """Train a communication model
+    """
+    print("Starting training (with communication)...")
+    x, y = open_dataset(dataset)
+    data = np.concatenate((x, y), axis=1).astype('float32')
+    LHV_size = config.LHV_size
+    training_size = config.training_size
+    number_of_measurements = data.shape[0]
+
+    K.clear_session()
+
+    if lr:
+        optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
+    else:
+        optimizer = config.optimizer
+    if loss:
+        model.compile(loss=loss, optimizer=optimizer, metrics=[])
+    else:
+        model.compile(loss=comm_customLoss_multiple,
+                      optimizer=optimizer, metrics=[])
+    loss_history = []
+
+    rng = np.random.default_rng()
+    print("Fitting model...")
+    # Fit model
+    for epoch in range(config.epochs // config.shuffle_epochs):
+        print("Shuffling data")
+        print("Shuffle ", epoch + 1, " out of ",
+              config.epochs // config.shuffle_epochs)
+        rng.shuffle(data)
+        x_train = data[:, :6]
+        y_train = data[:, 6:]
+
+        print("Adding LHV...")
+        x_train = add_LHV(x_train)                       	# Add the LHV
+        # To match the size of the inputs
+        y_train = np.repeat(y_train, LHV_size, axis=0)
+
+        print("Preparation finished, starting training...")
+        history = model.fit(x_train, y_train, batch_size=training_size*LHV_size,
+                            epochs=config.shuffle_epochs, verbose=1, shuffle=False)
+        loss_history += history.history['loss']
+        if history.history['loss'][-1] < config.cutoff:          	# Cutoff at 1e-4
+            break
+
+    # score = model.evaluate(x=x_train, y=y_train,
+    #                        batch_size=data.shape[0]*LHV_size)
+    if save:
+        print("Saving model...")
+        model.save(save_name)
+    # return (min(score, min(history.history['loss'])), loss_history)
+    return (min(history.history['loss']), loss_history)
+
+
+""" Beyond this, all the functions are depreciated."""
+
+
 def train_model(dataset, limit=None):
     """Train a no-communication model
     """
@@ -64,7 +122,8 @@ def train_model_comm(dataset, limit=None):
     model = build_model_comm()
 
     optimizer = config.optimizer
-    model.compile(loss=comm_customLoss_multiple, optimizer=optimizer, metrics=[])
+    model.compile(loss=comm_customLoss_multiple,
+                  optimizer=optimizer, metrics=[])
 
     rng = np.random.default_rng()
     print("Fitting model...")
@@ -87,8 +146,6 @@ def train_model_comm(dataset, limit=None):
                            batch_size=data.shape[0]*LHV_size)
     return min(score, min(history.history['loss']))
 
-
-
     """Train a communication model
     """
     print("Starting training (with communication)...")
@@ -103,7 +160,8 @@ def train_model_comm(dataset, limit=None):
     model = build_model_comm()
 
     optimizer = config.optimizer
-    model.compile(loss=comm_customLoss_multiple, optimizer=optimizer, metrics=[])
+    model.compile(loss=comm_customLoss_multiple,
+                  optimizer=optimizer, metrics=[])
     loss_history = []
 
     rng = np.random.default_rng()
@@ -127,60 +185,6 @@ def train_model_comm(dataset, limit=None):
     score = model.evaluate(x=x_train, y=y_train,
                            batch_size=data.shape[0]*LHV_size)
     return (min(score, min(history.history['loss'])), loss_history)
-
-
-def train(model, dataset, save=False, save_name=None, lr=None, loss=None):
-    """Train a communication model
-    """
-    print("Starting training (with communication)...")
-    x, y = open_dataset(dataset)
-    data = np.concatenate((x, y), axis=1).astype('float32')
-    LHV_size = config.LHV_size
-    training_size = config.training_size
-    number_of_measurements = data.shape[0]
-    
-    K.clear_session()
-
-    if lr:
-        optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
-    else:
-        optimizer = config.optimizer
-    if loss:
-        model.compile(loss=loss, optimizer=optimizer, metrics=[])
-    else:
-        model.compile(loss=comm_customLoss_multiple, optimizer=optimizer, metrics=[])
-    loss_history = []
-
-    rng = np.random.default_rng()
-    print("Fitting model...")
-    # Fit model
-    for epoch in range(config.epochs // config.shuffle_epochs):
-        print("Shuffling data")
-        print("Shuffle ", epoch + 1, " out of ",
-              config.epochs // config.shuffle_epochs)
-        rng.shuffle(data)
-        x_train = data[:, :6]
-        y_train = data[:, 6:]
-        
-        print("Adding LHV...")
-        x_train = add_LHV(x_train)                       	# Add the LHV
-        # To match the size of the inputs
-        y_train = np.repeat(y_train, LHV_size, axis=0)
-        
-        print("Preparation finished, starting training...")
-        history = model.fit(x_train, y_train, batch_size=training_size*LHV_size,
-                            epochs=config.shuffle_epochs, verbose=1, shuffle=False)
-        loss_history += history.history['loss']
-        if history.history['loss'][-1] < config.cutoff:          	# Cutoff at 1e-4
-            break
-
-    # score = model.evaluate(x=x_train, y=y_train,
-    #                        batch_size=data.shape[0]*LHV_size)
-    if save:
-        print("Saving model...")
-        model.save(save_name)
-    # return (min(score, min(history.history['loss'])), loss_history)
-    return (min(history.history['loss']), loss_history)
 
 
 def mixed_run(n=4, start=0, end=1, step=10, a=CHSH_measurements()[0], b=CHSH_measurements()[1], generate_new=True):
@@ -252,4 +256,3 @@ def werner_run(n=4, start=0, end=1, step=10, a=CHSH_measurements()[0], b=CHSH_me
     savename = input()
     df = pd.DataFrame({'werner_parameter': w_array, 'loss': loss_array})
     df.to_csv(savename + '.csv')
-
