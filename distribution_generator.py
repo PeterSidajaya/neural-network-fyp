@@ -14,6 +14,13 @@ def random_unit_vector(n):
     return v
 
 
+def random_unit_vectors(m, n):
+    """Generate m random vectors of n dimensions."""
+    array = np.random.normal(size=(m, n))
+    norm = np.linalg.norm(array, axis=1)
+    return array / norm[:, None]
+
+
 def random_semicircle_vector():
     """Generate a 2D random vector from a semicircle."""
     components = [np.random.normal() for i in range(2)]
@@ -36,6 +43,17 @@ def probability(state, vector_a, vector_b):
             op_b = 0.5 * (qt.identity(2) + (-1) ** j * operator_dot(vector_b))
             prob[(-1) ** i, (-1) ** j] = (qt.tensor(op_a, op_b)
                                           * state).tr()
+    return prob
+
+
+def probability_list(state, vector_a, vector_b):
+    """Returns the probabilities of a joint measurement defined by two unit vectors on an entangled state."""
+    prob = []
+    for i in range(2):
+        for j in range(2):
+            op_a = 0.5 * (qt.identity(2) + (-1) ** i * operator_dot(vector_a))
+            op_b = 0.5 * (qt.identity(2) + (-1) ** j * operator_dot(vector_b))
+            prob.append((qt.tensor(op_a, op_b) * state).tr())
     return prob
 
 
