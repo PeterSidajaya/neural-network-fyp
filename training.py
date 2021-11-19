@@ -1,4 +1,4 @@
-from distribution_generator import generate_mixed, generate_werner, CHSH_measurements
+from distribution_generator import generate_mixed, generate_werner, CHSH_measurements, random_unit_vector, probability_list, random_unit_vectors
 from neural_network_util import build_model, build_model_comm, customLoss_multiple, comm_customLoss_multiple
 from preprocess import open_dataset, add_LHV
 import tensorflow.keras.backend as K
@@ -68,9 +68,61 @@ def train(model, dataset, save=False, save_name=None, lr=None, loss=None):
 """ Beyond this, all the functions are depreciated."""
 
 
+def create_generator(state):
+    num_of_measurement = config.training_size
+    LHV_size = config.LHV_size
+    batch_size = num_of_measurement * LHV_size
+    while True:
+        x = np.ndarray((0, 12))
+        y = np.ndarray((0, 4))
+        lhvs_1 = random_unit_vectors(LHV_size, 3).astype('float32')
+        lhvs_2 = random_unit_vectors(LHV_size, 3).astype('float32')
+        for i in range(num_of_measurement):
+            vec_a, vec_b = random_unit_vector(3), random_unit_vector(3)
+
+            prob = probability_list(state, vec_a, vec_b)
+            probs = np.repeat(np.array([prob, ]), LHV_size, axis=0)
+            y = np.concatenate((y, probs), axis=0).astype('float32')
+
+            inputs = np.concatenate((np.repeat(
+                [vec_a + vec_b, ], LHV_size, axis=0), lhvs_1, lhvs_2), axis=1)
+            x = np.concatenate((x, inputs), axis=0).astype('float32')
+        yield (x, y)
+
+
+def train_generator(model, generator, save=False, save_name=None, lr=None, loss=None, steps=50):
+    """Train a communication model"""
+    print("Starting training...")
+    LHV_size = config.LHV_size
+    training_size = config.training_size
+
+    K.clear_session()
+
+    if lr:
+        optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
+    else:
+        optimizer = config.optimizer
+    if loss:
+        model.compile(loss=loss, optimizer=optimizer, metrics=[])
+    else:
+        model.compile(loss=comm_customLoss_multiple,
+                      optimizer=optimizer, metrics=[])
+
+    # Fit model
+    print("Fitting model with generator")
+    history = model.fit(x=generator, batch_size=training_size*LHV_size,
+                        epochs=config.epochs, steps_per_epoch=steps)
+    loss_history = history.history['loss']
+
+    # Save model
+    if save:
+        print("Saving model...")
+        model.save(save_name)
+    return (min(history.history['loss']), loss_history)
+
+
 def train_model(dataset, limit=None):
-    """Train a no-communication model
-    """
+    """Train a model"""
     print("Starting training...")
     x, y = open_dataset(dataset, limit=limit)
     data = np.concatenate((x, y), axis=1)
