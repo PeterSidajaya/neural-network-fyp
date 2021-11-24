@@ -2,59 +2,67 @@ from evo_functions import random_vector, random_vectors
 import numpy as np
 from evo_protocols import *
 
-def mp_fitness_creator(model=None, lhv_size=20, input_size=200, slice='Alice_1'):
+class mp_fitness_creator():
+    def __init__(self, model=None, lhv_size=20, input_size=200, slice='Alice_1') -> None:
+        self.model = model
+        self.lhv_size = lhv_size
+        self.input_size = input_size
+        self.slice = slice
     
-    def fitness(M):
-        inputs = random_vectors(input_size, 3)
-        lhvs = []
-        for i in range(lhv_size):
-            lhvs.append(np.concatenate((random_vector(3), random_vector(3))))
-        lhvs = np.array(lhvs)
+    def generate(self):
+        self.inputs = random_vectors(self.input_size, 3)
+        self.lhvs = []
+        for i in range(self.lhv_size):
+            self.lhvs.append(np.concatenate((random_vector(3), random_vector(3))))
+        self.lhvs = np.array(self.lhvs)
+    
+    def create_fitness(self):
+        def fitness(M):
+            if self.model == None:
+                pred_probs, true_probs = np.zeros((self.lhv_size*self.input_size, 2)), np.zeros((self.lhv_size*self.input_size, 2))
+                for j in range(self.lhv_size):
+                    lhv = self.lhvs[j,0:3], self.lhvs[j,3:6]
+                    for i in range(self.input_size):
+                        input = self.inputs[i]
+
+                        # Edit here for the true and fitted function
+                        true_prob = comm_protocol(input, lhv)
+                        pred_prob = 1/2 + 1/2 * np.sign(mdot(input, lhv[0], M.value[0])) * np.sign(mdot(input, lhv[1], M.value[0]))
+                        
+                        true = np.array([true_prob, 1-true_prob])
+                        pred = [pred_prob, 1-pred_prob]
+                        true_probs[self.input_size*j+i,:] = true
+                        pred_probs[self.input_size*j+i,:] = pred
+
+                res = KL_distance(true_probs, pred_probs)/(self.lhv_size*self.input_size)
+            
+            else:
+                xarray = np.concatenate((np.tile(self.inputs, (self.lhv_size,1)),np.tile(self.inputs, (self.lhv_size,1)),
+                                         np.repeat(self.lhvs, self.input_size, axis=0)), axis=1)
+                yarray = self.model.predict(xarray)
+                probs = np.zeros((self.lhv_size*self.input_size, 2))
+                for j in range(self.lhv_size):
+                    lhv = self.lhvs[j,0:3], self.lhvs[j,3:6]
+                    for i in range(self.input_size):
+                        input = self.inputs[i]
+                        # Edit here for the true and fitted function
+                        prob = 1/2 + 1/2 * np.sign(mdot(input, lhv[0], M.value[0])) * np.sign(mdot(input, lhv[1], M.value[0]))
+                        pred = [prob, 1-prob]
+                        probs[self.input_size*j+i,:] = pred
+                if slice == 'Alice_1':
+                    true = yarray[:,1:3]
+                elif slice == 'Bob_1':
+                    true = yarray[:,3:5]
+                elif slice == 'Alice_2':
+                    true = yarray[:,5:7]
+                elif slice == 'Bob_2':
+                    true = yarray[:,7:9]
+                elif slice == 'Comm':
+                    true = np.concatenate((yarray[:,0:1], 1-yarray[:,0:1]), axis=1)
+                res = KL_distance(true, probs)/(self.lhv_size*self.input_size)
+            return -res
         
-        if model == None:
-            pred_probs, true_probs = np.zeros((lhv_size*input_size, 2)), np.zeros((lhv_size*input_size, 2))
-            for j in range(lhv_size):
-                lhv = lhvs[j,0:3], lhvs[j,3:6]
-                for i in range(input_size):
-                    input = inputs[i]
-
-                    # Edit here for the true and fitted function
-                    true_prob = comm_protocol(input, lhv)
-                    pred_prob = 1/2 + 1/2 * np.sign(mdot(input, lhv[0], M.value[0])) * np.sign(mdot(input, lhv[1], M.value[0]))
-                    
-                    true = np.array([true_prob, 1-true_prob])
-                    pred = [pred_prob, 1-pred_prob]
-                    true_probs[input_size*j+i,:] = true
-                    pred_probs[input_size*j+i,:] = pred
-
-            res = KL_distance(true_probs, pred_probs)/(lhv_size*input_size)
-        
-        else:
-            xarray = np.concatenate((np.tile(inputs, (lhv_size,1)), np.tile(inputs, (lhv_size,1)), np.repeat(lhvs, input_size, axis=0)), axis=1)
-            yarray = model.predict(xarray)
-            probs = np.zeros((lhv_size*input_size, 2))
-            for j in range(lhv_size):
-                lhv = lhvs[j,0:3], lhvs[j,3:6]
-                for i in range(input_size):
-                    input = inputs[i]
-                    # Edit here for the true and fitted function
-                    prob = 1/2 + 1/2 * np.sign(mdot(input, lhv[0], M.value[0])) * np.sign(mdot(input, lhv[1], M.value[0]))
-                    pred = [prob, 1-prob]
-                    probs[input_size*j+i,:] = pred
-            if slice == 'Alice_1':
-                true = yarray[:,1:3]
-            elif slice == 'Bob_1':
-                true = yarray[:,3:5]
-            elif slice == 'Alice_2':
-                true = yarray[:,5:7]
-            elif slice == 'Bob_2':
-                true = yarray[:,7:9]
-            elif slice == 'Comm':
-                true = np.concatenate((yarray[:,0:1], 1-yarray[:,0:1]), axis=1)
-            res = KL_distance(true, probs)/(lhv_size*input_size)
-        return -res
-
-    return fitness
+        return fitness
 
 
 def KL_distance(true, pred):
