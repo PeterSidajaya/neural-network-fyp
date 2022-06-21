@@ -46,7 +46,6 @@ def add_LHV(input_array):
     """
     LHV_per_setting = config.LHV_size
     input_size = input_array.shape[0]
-    print(LHV_per_setting * input_size)
     input_array = np.repeat(input_array, LHV_per_setting, axis=0)
     if config.LHV_type == "gauss":
         config.number_of_LHV = 1

@@ -115,3 +115,15 @@ class MP(Individual):
     def _random_init(self, init_params):
         return np.array([np.array([[1,0,0],[0,1,0],[0,0,1]]) + np.random.normal(loc=0, scale=init_params['std'], size=(3,3))
                          for _ in range(init_params['dim'])])
+        
+
+class MP_lin(Individual):
+    def mutate(self, mutate_params):
+        self.value += np.array([np.random.normal(scale=mutate_params['std'])
+                                for _ in range(mutate_params['dim'])])
+    
+    def pair(self, other, pair_params):
+        return MP_lin(pair_params['alpha'] * self.value + (1-pair_params['alpha']) * other.value)
+    
+    def _random_init(self, init_params):
+        return np.array([np.random.normal(scale=init_params['std']) for _ in range(init_params['dim'])])

@@ -311,11 +311,14 @@ def build_NewModel_Afix():
     return model
 
 
-def keras_distance(p, q):
+def keras_distance(p, q, type=None):
     """ Distance used in loss function."""
-    p = K.clip(p, K.epsilon(), 1)
-    q = K.clip(q, K.epsilon(), 1)
-    return K.sum(p * K.log(p / q), axis=-1)
+    if not type:
+        p = K.clip(p, K.epsilon(), 1)
+        q = K.clip(q, K.epsilon(), 1)
+        return K.sum(p * K.log(p / q), axis=-1)
+    elif type == 'tvd':
+        return K.sum(K.abs(p - q))/2
 
 
 def customLoss_distr(y_pred):
@@ -367,20 +370,20 @@ def customLoss_distr_multiple(y_pred):
     return probs_list
 
 
-def customLoss_multiple(y_true, y_pred):
+def customLoss_multiple(y_true, y_pred, type=None):
     """ Custom loss function."""
     # Note that y_true is just LHV_size copies of the target distributions. So any row could be taken here. We just take 0-th row.
     probs_list = customLoss_distr_multiple(y_pred)
     loss = 0
     for i in range(config.training_size):
-        loss += keras_distance(y_true[config.LHV_size*i, :], probs_list[i])
+        loss += keras_distance(y_true[config.LHV_size*i, :], probs_list[i], type=type)
     return loss / config.training_size
 
 
 def comm_customLoss_distr_multiple(y_pred):
     """ Converts the output of the neural network to several probability vectors.
     That is from a shape of (batch_size, 1 + outputsize + outputsize + outputsize + outputsize)
-    to a shape of (training_size, outputsize * outputsize).
+    to a shape of (batch_size, outputsize * outputsize).
     Used for the communication model only!
     """
     outputsize = config.party_outputsize
@@ -414,11 +417,47 @@ def comm_customLoss_distr_multiple(y_pred):
     return probs_list
 
 
-def comm_customLoss_multiple(y_true, y_pred):
+def comm_customLoss_multiple(y_true, y_pred, type=None):
     """ Custom loss function. Used for the communication model only!"""
     # Note that y_true is just LHV_size copies of the target distributions. So any row could be taken here. We just take 0-th row.
     probs_list = comm_customLoss_distr_multiple(y_pred)
     loss = 0
     for i in range(config.training_size):
-        loss += keras_distance(y_true[config.LHV_size*i, :], probs_list[i])
+        loss += keras_distance(y_true[config.LHV_size*i, :], probs_list[i], type=type)
     return loss / config.training_size
+
+
+def comm_customLoss_local_distr_multiple(y_pred):
+    """ Converts the output of the neural network to several probability vectors.
+    That is from a shape of (batch_size, 1 + outputsize + outputsize + outputsize + outputsize)
+    to a shape of (batch_size, 2 * outputsize * outputsize + 1).
+    Used for the communication model only!
+    """
+    outputsize = config.party_outputsize
+    LHV_size = config.LHV_size
+    probs_list = []
+    for i in range(config.training_size):
+        c_probs = y_pred[LHV_size*i:LHV_size*(i+1), 0:1]
+        a_probs_1 = y_pred[LHV_size*i:LHV_size*(i+1), 1:1*outputsize+1]
+        b_probs_1 = y_pred[LHV_size*i:LHV_size *
+                           (i+1), 1*outputsize+1:2*outputsize+1]
+        a_probs_2 = y_pred[LHV_size*i:LHV_size *
+                           (i+1), 2*outputsize+1:3*outputsize+1]
+        b_probs_2 = y_pred[LHV_size*i:LHV_size *
+                           (i+1), 3*outputsize+1:4*outputsize+1]
+
+        a_probs_1 = K.reshape(a_probs_1, (-1, outputsize, 1))
+        b_probs_1 = K.reshape(b_probs_1, (-1, 1, outputsize))
+
+        a_probs_2 = K.reshape(a_probs_2, (-1, outputsize, 1))
+        b_probs_2 = K.reshape(b_probs_2, (-1, 1, outputsize))
+
+        probs_1 = a_probs_1 * b_probs_1
+        probs_1 = K.reshape(probs_1, (-1, outputsize * outputsize))
+        probs_2 = a_probs_2 * b_probs_2
+        probs_2 = K.reshape(probs_2, (-1, outputsize * outputsize))
+        probs = Concatenate()([probs_1, probs_2, c_probs])
+        probs = K.mean(probs, axis=0)
+
+        probs_list.append(probs)
+    return np.array(probs_list)
