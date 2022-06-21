@@ -23,12 +23,12 @@ def open_dataset(filename, limit=None):
     return process_dataset(df, limit=limit)
 
 
-def process_dataset(dataframe, limit=None):
+def process_dataset(dataframe, limit=None, dim=2):
     dataframe = dataframe.to_numpy()
     # input is the first 6 columns
     input_array = dataframe[::4, :6]
     # reshape the probability
-    output_array = dataframe[:, 8].reshape(-1, 4)
+    output_array = dataframe[:, 8].reshape(-1, dim**2)
     if limit:
         input_array = input_array[:limit]
         output_array = output_array[:limit]
@@ -69,9 +69,6 @@ def add_LHV(input_array):
         LHV_list = np.array([np.concatenate((random_unit_vector(3), random_unit_vector(3))) for i in range(
             LHV_per_setting)])
         LHV_list = np.tile(LHV_list, (input_size, 1))
-    elif config.LHV_type == "semicircle":
-        config.number_of_LHV = 2
-        LHV_list = np.array([random_semicircle_vector() for i in range(LHV_per_setting * input_size)])
     elif config.LHV_type == "vector pair dot":
         config.number_of_LHV = 6
         LHV_list = []

@@ -1,6 +1,8 @@
-from distribution_generator import generate_mixed, generate_werner, CHSH_measurements, random_unit_vector, probability_list, random_unit_vectors
+from distribution_generator import generate_mixed, generate_werner, CHSH_measurements, random_unit_vector, random_unit_vectors
 from neural_network_util import build_model, build_model_comm, customLoss_multiple, comm_customLoss_multiple
 from preprocess import open_dataset, add_LHV
+import distribution_generator
+import distribution_generator_qutrit
 import tensorflow.keras.backend as K
 import numpy as np
 import pandas as pd
@@ -8,6 +10,31 @@ import qutip as qt
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import config
+
+
+def create_generator(state, dim=2):
+    num_of_measurement = config.training_size
+    LHV_size = config.LHV_size
+    batch_size = num_of_measurement * LHV_size
+    while True:
+        x = np.ndarray((0, 12))
+        y = np.ndarray((0, dim**2))
+        lhvs_1 = random_unit_vectors(LHV_size, 3).astype('float32')
+        lhvs_2 = random_unit_vectors(LHV_size, 3).astype('float32')
+        for i in range(num_of_measurement):
+            vec_a, vec_b = random_unit_vector(3), random_unit_vector(3)
+
+            if dim == 2:
+                prob = distribution_generator.probability_list(state, vec_a, vec_b)
+            if dim == 3:
+                prob = distribution_generator_qutrit.probability_list(state, vec_a, vec_b)
+            probs = np.repeat(np.array([prob, ]), LHV_size, axis=0)
+            y = np.concatenate((y, probs), axis=0).astype('float32')
+
+            inputs = np.concatenate((np.repeat(
+                [vec_a + vec_b, ], LHV_size, axis=0), lhvs_1, lhvs_2), axis=1)
+            x = np.concatenate((x, inputs), axis=0).astype('float32')
+        yield (x, y)
 
 
 def train(model, dataset, save=False, save_name=None, lr=None, loss=None):
@@ -65,31 +92,6 @@ def train(model, dataset, save=False, save_name=None, lr=None, loss=None):
     return (min(history.history['loss']), loss_history)
 
 
-""" Beyond this, all the functions are depreciated."""
-
-
-def create_generator(state):
-    num_of_measurement = config.training_size
-    LHV_size = config.LHV_size
-    batch_size = num_of_measurement * LHV_size
-    while True:
-        x = np.ndarray((0, 12))
-        y = np.ndarray((0, 4))
-        lhvs_1 = random_unit_vectors(LHV_size, 3).astype('float32')
-        lhvs_2 = random_unit_vectors(LHV_size, 3).astype('float32')
-        for i in range(num_of_measurement):
-            vec_a, vec_b = random_unit_vector(3), random_unit_vector(3)
-
-            prob = probability_list(state, vec_a, vec_b)
-            probs = np.repeat(np.array([prob, ]), LHV_size, axis=0)
-            y = np.concatenate((y, probs), axis=0).astype('float32')
-
-            inputs = np.concatenate((np.repeat(
-                [vec_a + vec_b, ], LHV_size, axis=0), lhvs_1, lhvs_2), axis=1)
-            x = np.concatenate((x, inputs), axis=0).astype('float32')
-        yield (x, y)
-
-
 def train_generator(model, generator, save=False, save_name=None, lr=None, loss=None, steps=50):
     """Train a communication model"""
     print("Starting training...")
@@ -119,6 +121,9 @@ def train_generator(model, generator, save=False, save_name=None, lr=None, loss=
         print("Saving model...")
         model.save(save_name)
     return (min(history.history['loss']), loss_history)
+
+
+"""Warning, deprecated functions follow, thread on your own risk!"""
 
 
 def train_model(dataset, limit=None):
@@ -198,45 +203,6 @@ def train_model_comm(dataset, limit=None):
                            batch_size=data.shape[0]*LHV_size)
     return min(score, min(history.history['loss']))
 
-    """Train a communication model
-    """
-    print("Starting training (with communication)...")
-    x, y = open_dataset(dataset, limit=limit)
-    data = np.concatenate((x, y), axis=1)
-    LHV_size = config.LHV_size
-    training_size = config.training_size
-    number_of_measurements = data.shape[0]
-
-    print("Generating model...")
-    K.clear_session()
-    model = build_model_comm()
-
-    optimizer = config.optimizer
-    model.compile(loss=comm_customLoss_multiple,
-                  optimizer=optimizer, metrics=[])
-    loss_history = []
-
-    rng = np.random.default_rng()
-    print("Fitting model...")
-    # Fit model
-    for epoch in range(config.epochs // config.shuffle_epochs):
-        print("Shuffling data")
-        print("Shuffle ", epoch + 1, " out of ",
-              config.epochs // config.shuffle_epochs)
-        rng.shuffle(data)
-        x_train = data[:, :6]
-        y_train = data[:, 6:]
-        x_train = add_LHV(x_train)                       	# Add the LHV
-        # To match the size of the inputs
-        y_train = np.repeat(y_train, LHV_size, axis=0)
-        history = model.fit(x_train, y_train, batch_size=training_size*LHV_size,
-                            epochs=config.shuffle_epochs, verbose=1, shuffle=False)
-        loss_history += history.history['loss']
-        if min(history.history['loss']) < config.cutoff:          	# Cutoff at 1e-4
-            break
-    score = model.evaluate(x=x_train, y=y_train,
-                           batch_size=data.shape[0]*LHV_size)
-    return (min(score, min(history.history['loss'])), loss_history)
 
 
 def mixed_run(n=4, start=0, end=1, step=10, a=CHSH_measurements()[0], b=CHSH_measurements()[1], generate_new=True):
