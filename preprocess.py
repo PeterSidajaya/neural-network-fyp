@@ -8,7 +8,7 @@ from distribution_generator import random_unit_vector, random_semicircle_vector
 """
 
 
-def open_dataset(filename, limit=None):
+def open_dataset(filename, limit=None, dim=2):
     """Opens the csv of state behaviour and returns the inputs and outputs for the Neural Network training
 
     Args:
@@ -20,7 +20,7 @@ def open_dataset(filename, limit=None):
             The size of the output is (-1, 4).
     """
     df = pd.read_csv(filename, index_col=0)
-    return process_dataset(df, limit=limit)
+    return process_dataset(df, limit=limit, dim=dim)
 
 
 def process_dataset(dataframe, limit=None, dim=2):
