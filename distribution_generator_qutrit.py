@@ -60,7 +60,10 @@ def probability_list(state, vector_a, vector_b):
         for j in [-1,0,1]:
             op_a = qt.ket2dm(spin_a[i])
             op_b = qt.ket2dm(spin_b[j])
-            prob.append((qt.tensor(op_a, op_b) * state).tr())
+            p = (qt.tensor(op_a, op_b) * state).tr()
+            if np.imag(p) > 0.1:
+                raise(ValueError)
+            prob.append(np.real(p))
     return prob
 
 
