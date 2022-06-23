@@ -238,6 +238,29 @@ def combine_measurements(vec_a_list, vec_b_list):
     return alice_list, bob_list
 
 
+def generate_noise(state, n=8, start=0, end=1, step=10, a=None, b=None):
+    """Generate a series of mixed state datasets by mixing a state with white noise.
+    Keyword arguments:
+        state: the inital state
+        n: number of measurements (default 8)
+        start: starting mixed state parameter (default 0)
+        end: ending mixed state parameter (default 1)
+        step: number of datasets to be generated (default 10)
+        a: list of vectors for Alice (default None)
+        b: list of vectors for Bob (default None)
+    """
+    count = 0
+    # Check if vectors are passed. If not, generate randomly
+    if a == None or b == None:
+        a, b = random_joint_vectors(n)
+    for p in np.linspace(start, end, step):
+        state = p * state + (1-p) * qt.identity(3)
+        filename = 'datasets\\dataset_noise_state_' + \
+            str(count) + '.csv'
+        generate_dataset_from_vectors(state, a, b).to_csv(filename)
+        count += 1
+
+
 def read_from_vector_dataset(filename):
     """Reads the vectors from a .csv dataset file containing 3D vectors.
 
