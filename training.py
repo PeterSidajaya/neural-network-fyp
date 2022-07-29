@@ -37,11 +37,11 @@ def create_generator(state, dim=2):
         yield (x, y)
 
 
-def train(model, dataset, save=False, save_name=None, lr=None, loss=None):
+def train(model, dataset, save=False, save_name=None, lr=None, loss=None, dim=2):
     """Train a communication model
     """
     print("Starting training (with communication)...")
-    x, y = open_dataset(dataset)
+    x, y = open_dataset(dataset, dim=dim)
     data = np.concatenate((x, y), axis=1).astype('float32')
     LHV_size = config.LHV_size
     training_size = config.training_size
