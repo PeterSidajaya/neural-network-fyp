@@ -37,6 +37,33 @@ def create_generator(state, dim=2):
         yield (x, y)
 
 
+def create_generator_limited(state, alice_set, bob_set, dim=2):
+    num_of_measurement = config.training_size
+    LHV_size = config.LHV_size
+    batch_size = num_of_measurement * LHV_size
+    rng = np.random.default_rng()
+    
+    while True:
+        x = np.ndarray((0, 12))
+        y = np.ndarray((0, dim**2))
+        lhvs_1 = random_unit_vectors(LHV_size, 3).astype('float32')
+        lhvs_2 = random_unit_vectors(LHV_size, 3).astype('float32')
+        for i in range(num_of_measurement):
+            vec_a, vec_b = np.array(alice_set[rng.integers(0, len(alice_set))]).astype('float32'), np.array(bob_set[rng.integer(0, len(bob_set))]).astype('float32')
+
+            if dim == 2:
+                prob = distribution_generator.probability_list(state, vec_a, vec_b)
+            if dim == 3:
+                prob = distribution_generator_qutrit.probability_list(state, vec_a, vec_b)
+            probs = np.repeat(np.array([prob, ]), LHV_size, axis=0)
+            y = np.concatenate((y, probs), axis=0).astype('float32')
+
+            inputs = np.concatenate((np.repeat(
+                [vec_a + vec_b, ], LHV_size, axis=0), lhvs_1, lhvs_2), axis=1)
+            x = np.concatenate((x, inputs), axis=0).astype('float32')
+        yield (x, y)
+
+
 def train(model, dataset, save=False, save_name=None, lr=None, loss=None, dim=2):
     """Train a communication model
     """
