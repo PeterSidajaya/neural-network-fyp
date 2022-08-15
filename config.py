@@ -12,7 +12,7 @@ LHV_type = "vector pair"    # type of LHV ("gauss", "uniform")
 
 party_width = 50			        # width of NN
 party_depth = 3	    		        # depth of NN
-party_outputsize = 2		        # size of output
+party_outputsize = 3		        # size of output
 activation_func = 'relu'            # activation function for NN
 # activation function for the final layer of the comm part
 activation_func_comm = 'sigmoid'

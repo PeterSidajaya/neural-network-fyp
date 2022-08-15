@@ -9,32 +9,47 @@ import tensorflow as tf
 import tensorflow.keras.backend as K
 import qutip as qt
 import pickle
-from distribution_generator import *
+from distribution_generator_qutrit import *
 from training import *
 
-config.shuffle_epochs = 1
-config.epochs = 100
-
-folder_name = "NewModel\\TV\\5pi-32_singlet_1\\"
-state = qt.ket2dm(nme_singlet(5*np.pi/32))
+folder_name = "qutrit\\spin measurements - comm\\"
+ket = (qt.tensor(qt.basis(3,0), qt.basis(3,0)) \
+        + qt.tensor(qt.basis(3,1), qt.basis(3,1)) \
+        + qt.tensor(qt.basis(3,2), qt.basis(3,2))).unit()
+state = 0.75 * 1/9 * qt.tensor(qt.identity(3), qt.identity(3)) + 0.25 * qt.ket2dm(ket)
 
 minimas = []
 histories = []
 K.clear_session()
 
-# LOAD OLD MODEL
-model = keras.models.load_model("NewModel\\TV\\3pi-16_singlet_2\\3pi_16_model.h5", compile=False)
-
-config.epochs = 1
-vec_alice, vec_bob = maximum_violation_measurements_extended(5*np.pi/32, n=config.training_size)
-dataset_df = generate_dataset_from_vectors(state, vec_alice, vec_bob)
-dataset_df.to_csv(folder_name + "dummy.csv")
-train(model, folder_name + "dummy.csv", save=False, lr=1e-7, loss=comm_customLoss_multiple)
+model = build_NewModel()
 print("Model finished.")
 
+# # LOAD OLD MODEL
+# model = keras.models.load_model(folder_name + '100 runs\\qutrit_no_noise.h5', compile=False)
+
+# config.epochs = 1
+# config.LHV_size = 1
+# alice_measurements = [[1,0,0]]
+# bob_measurements = [[1,0,0]]
+# minima, history = train_generator(model,
+#                                     create_generator_limited(state, alice_measurements, bob_measurements, dim=3),
+#                                     loss=comm_customLoss_multiple, steps=1)
+
+# # LOAD OLD WEIGHTS
+# with open(folder_name + '100 runs\\optimizer.pkl', 'rb') as f:
+#     weight_values = pickle.load(f)
+# model.optimizer.set_weights(weight_values)
+
+# print("Model finished.")
+
 config.epochs = 100
-minima, history = train_generator(model, create_generator(state), save=True,
-                        save_name=folder_name + '5pi_32_model.h5', loss=comm_customLoss_multiple, steps=50)
+config.LHV_size = 1000
+alice_measurements = [[1,0,0], [0,0,1], [1/np.sqrt(2),0,1/np.sqrt(2)], [1/np.sqrt(2),0,-1/np.sqrt(2)],[0,1,0], [0,0,1], [0,1/np.sqrt(2),1/np.sqrt(2)], [0,1/np.sqrt(2),-1/np.sqrt(2)]]
+bob_measurements = [[1,0,0], [0,0,1], [1/np.sqrt(2),0,1/np.sqrt(2)], [1/np.sqrt(2),0,-1/np.sqrt(2)],[0,1,0], [0,0,1], [0,1/np.sqrt(2),1/np.sqrt(2)], [0,1/np.sqrt(2),-1/np.sqrt(2)]]
+minima, history = train_generator(model,
+                                    create_generator_limited(state, alice_measurements, bob_measurements, dim=3), save=True,
+                                    save_name=folder_name + 'qutrit_75_noise.h5', loss=comm_customLoss_multiple, steps=100)
 minimas.append(minima)
 histories.append(history)
 

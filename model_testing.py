@@ -10,11 +10,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-def predict(model, x):
+def predict(model, x, comm=True):
     """Predict the probability distributions given a model and some inputs x"""
     x_LHV = add_LHV(x)
     y_predict = model.predict(x_LHV)
-    probs_predict = comm_customLoss_distr_multiple(y_predict)
+    if comm:
+        probs_predict = comm_customLoss_distr_multiple(y_predict)
+    else:
+        probs_predict = customLoss_distr_multiple(y_predict)
     return probs_predict
 
 

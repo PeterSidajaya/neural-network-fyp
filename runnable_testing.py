@@ -11,6 +11,16 @@ from matplotlib import rcParams
 rcParams['font.family'] = 'serif'
 
 
+# qutrit
+folder_name = "qutrit\\"
+state = qt.tensor(qt.identity(3), qt.identity(3))
+
+
+model = keras.models.load_model(folder_name + "qubit.h5", compile=False)
+config.training_size = 1
+print(predict(model, np.array([[0,0,1,0,0,1]]), comm=False))
+
+# old
 folder_name = "NewModel\\TV\\3pi-16_singlet_2\\"
 theta = 3*np.pi/16
 state = qt.ket2dm(nme_singlet(theta))
@@ -30,7 +40,6 @@ evaluate_marginals(model, theta, vec_alice, vec_bob, local=True, strategy=0)
 
 print('STRATEGY TWO')
 evaluate_marginals(model, theta, vec_alice, vec_bob, local=True, strategy=1)
-
 
 # vec_x = np.array([1, 0, 0])
 # vec_y = np.array([0, 1, 0])
