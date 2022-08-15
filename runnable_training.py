@@ -17,6 +17,7 @@ ket = (qt.tensor(qt.basis(3,0), qt.basis(3,0)) \
         + qt.tensor(qt.basis(3,1), qt.basis(3,1)) \
         + qt.tensor(qt.basis(3,2), qt.basis(3,2))).unit()
 state = 0.75 * 1/9 * qt.tensor(qt.identity(3), qt.identity(3)) + 0.25 * qt.ket2dm(ket)
+
 minimas = []
 histories = []
 K.clear_session()

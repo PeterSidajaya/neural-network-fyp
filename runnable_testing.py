@@ -11,6 +11,7 @@ from matplotlib import rcParams
 rcParams['font.family'] = 'serif'
 
 
+# qutrit
 folder_name = "qutrit\\"
 state = qt.tensor(qt.identity(3), qt.identity(3))
 
@@ -19,6 +20,27 @@ model = keras.models.load_model(folder_name + "qubit.h5", compile=False)
 config.training_size = 1
 print(predict(model, np.array([[0,0,1,0,0,1]]), comm=False))
 
+# old
+folder_name = "NewModel\\TV\\3pi-16_singlet_2\\"
+theta = 3*np.pi/16
+state = qt.ket2dm(nme_singlet(theta))
+
+
+model = keras.models.load_model(folder_name + "3pi_16_model.h5", compile=False)
+config.training_size = 1
+print(validate(model, state, comm=True, type='tvd'))
+
+vec_alice = random_unit_vector(3)
+vec_bob = random_unit_vector(3)
+
+print(comm_balance(model, vec_alice, vec_bob))
+
+print('STRATEGY ONE')
+evaluate_marginals(model, theta, vec_alice, vec_bob, local=True, strategy=0)
+
+print('STRATEGY TWO')
+evaluate_marginals(model, theta, vec_alice, vec_bob, local=True, strategy=1)
+
 # vec_x = np.array([1, 0, 0])
 # vec_y = np.array([0, 1, 0])
 # vec_z = np.array([0, 0, 1])
@@ -26,10 +48,13 @@ print(predict(model, np.array([[0,0,1,0,0,1]]), comm=False))
 #         'y': vec_y,
 #         'z': vec_z}
 
-# type = 'spherical'
+# type = 'scatter'
 # show = False
 
-# rt = folder_name + "figures"
+# distr = map_distr_TV(model, vec_z, vec_z)
+# plot_comm_distr_vector(distr, type=type, color='comm', show=True, title="Bit of communication sent")
+
+# rt = folder_name + "figures3D"
 # os.mkdir(rt)
 
 # for l_sweep, l_fix in [(1, 2), (2, 1)]:
