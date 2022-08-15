@@ -12,36 +12,55 @@ import pickle
 from distribution_generator_qutrit import *
 from training import *
 
-config.shuffle_epochs = 1
-config.epochs = 10
-
-folder_name = "qutrit\\"
+folder_name = "qutrit\\spin measurements - comm\\"
 ket = (qt.tensor(qt.basis(3,0), qt.basis(3,0)) \
         + qt.tensor(qt.basis(3,1), qt.basis(3,1)) \
         + qt.tensor(qt.basis(3,2), qt.basis(3,2))).unit()
-state = 0.35 * 1/9 * qt.tensor(qt.identity(3), qt.identity(3)) + 0.65 * qt.ket2dm(ket)
-model = build_NewModel_NC()
-print("Model finished.")
-
+state = 0.75 * 1/9 * qt.tensor(qt.identity(3), qt.identity(3)) + 0.25 * qt.ket2dm(ket)
 minimas = []
 histories = []
 K.clear_session()
 
-config.epochs = 25
-minima, history = train_generator(model, create_generator(state, dim=3), save=True,
-                        save_name=folder_name + 'qutrit_35_noise.h5', loss=customLoss_multiple, steps=100)
+model = build_NewModel()
+print("Model finished.")
+
+# # LOAD OLD MODEL
+# model = keras.models.load_model(folder_name + '100 runs\\qutrit_no_noise.h5', compile=False)
+
+# config.epochs = 1
+# config.LHV_size = 1
+# alice_measurements = [[1,0,0]]
+# bob_measurements = [[1,0,0]]
+# minima, history = train_generator(model,
+#                                     create_generator_limited(state, alice_measurements, bob_measurements, dim=3),
+#                                     loss=comm_customLoss_multiple, steps=1)
+
+# # LOAD OLD WEIGHTS
+# with open(folder_name + '100 runs\\optimizer.pkl', 'rb') as f:
+#     weight_values = pickle.load(f)
+# model.optimizer.set_weights(weight_values)
+
+# print("Model finished.")
+
+config.epochs = 100
+config.LHV_size = 1000
+alice_measurements = [[1,0,0], [0,0,1], [1/np.sqrt(2),0,1/np.sqrt(2)], [1/np.sqrt(2),0,-1/np.sqrt(2)],[0,1,0], [0,0,1], [0,1/np.sqrt(2),1/np.sqrt(2)], [0,1/np.sqrt(2),-1/np.sqrt(2)]]
+bob_measurements = [[1,0,0], [0,0,1], [1/np.sqrt(2),0,1/np.sqrt(2)], [1/np.sqrt(2),0,-1/np.sqrt(2)],[0,1,0], [0,0,1], [0,1/np.sqrt(2),1/np.sqrt(2)], [0,1/np.sqrt(2),-1/np.sqrt(2)]]
+minima, history = train_generator(model,
+                                    create_generator_limited(state, alice_measurements, bob_measurements, dim=3), save=True,
+                                    save_name=folder_name + 'qutrit_75_noise.h5', loss=comm_customLoss_multiple, steps=100)
 minimas.append(minima)
 histories.append(history)
 
-model.save_weights(folder_name + 'weights7.h5')
+model.save_weights(folder_name + 'weights.h5')
 symbolic_weights = getattr(model.optimizer, 'weights')
 weight_values = K.batch_get_value(symbolic_weights)
-with open(folder_name + 'optimizer7.pkl', 'wb') as f:
+with open(folder_name + 'optimizer.pkl', 'wb') as f:
     pickle.dump(weight_values, f)
 
-save_name = folder_name + 'loss7.csv'
+save_name = folder_name + 'loss.csv'
 np.savetxt(save_name, minimas)
-save_name = folder_name + 'history7.csv'
+save_name = folder_name + 'history.csv'
 np.savetxt(save_name, histories[0])
 
 print("Training finished")

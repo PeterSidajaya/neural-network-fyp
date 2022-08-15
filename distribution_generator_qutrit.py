@@ -31,8 +31,7 @@ def operator_dot(vector):
 def spin_operator(vector):
     S = vector[0] * S_x + vector[1] * S_y + vector[2] * S_z
     eigvals, eigstates = S.eigenstates()
-    if max(eigvals - [-1,0,1]) > 1e-10:
-        print('ERROR!')
+    if max(eigvals - [-1,0,1]) > 1e-6:
         raise(ValueError)
     return {-1:eigstates[0], 0:eigstates[1], 1:eigstates[2]}
 

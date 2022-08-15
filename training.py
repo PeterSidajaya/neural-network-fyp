@@ -1,5 +1,5 @@
 from distribution_generator import generate_mixed, generate_werner, CHSH_measurements, random_unit_vector, random_unit_vectors
-from neural_network_util import build_model, build_model_comm, customLoss_multiple, comm_customLoss_multiple
+from neural_network_util import build_model, build_model_comm, customLoss_multiple, comm_customLoss_multiple, CGLMP_local, CGLMP_nonlocal
 from preprocess import open_dataset, add_LHV
 import distribution_generator
 import distribution_generator_qutrit
@@ -17,7 +17,7 @@ def create_generator(state, dim=2):
     LHV_size = config.LHV_size
     batch_size = num_of_measurement * LHV_size
     while True:
-        x = np.ndarray((0, 12))
+        x = np.ndarray((0, 6 + config.number_of_LHV))
         y = np.ndarray((0, dim**2))
         lhvs_1 = random_unit_vectors(LHV_size, 3).astype('float32')
         lhvs_2 = random_unit_vectors(LHV_size, 3).astype('float32')
@@ -33,34 +33,39 @@ def create_generator(state, dim=2):
 
             inputs = np.concatenate((np.repeat(
                 [vec_a + vec_b, ], LHV_size, axis=0), lhvs_1, lhvs_2), axis=1)
+            print(inputs.shape)
             x = np.concatenate((x, inputs), axis=0).astype('float32')
         yield (x, y)
 
 
 def create_generator_limited(state, alice_set, bob_set, dim=2):
-    num_of_measurement = config.training_size
+    num_of_measurement = len(alice_set) * len(bob_set)
+    config.training_size = num_of_measurement
     LHV_size = config.LHV_size
     batch_size = num_of_measurement * LHV_size
     rng = np.random.default_rng()
     
     while True:
-        x = np.ndarray((0, 12))
+        x = np.ndarray((0, 6 + config.number_of_LHV))
         y = np.ndarray((0, dim**2))
         lhvs_1 = random_unit_vectors(LHV_size, 3).astype('float32')
         lhvs_2 = random_unit_vectors(LHV_size, 3).astype('float32')
-        for i in range(num_of_measurement):
-            vec_a, vec_b = np.array(alice_set[rng.integers(0, len(alice_set))]).astype('float32'), np.array(bob_set[rng.integer(0, len(bob_set))]).astype('float32')
+        for i in range(len(alice_set)):
+            for j in range(len(bob_set)):
+                vec_a, vec_b = np.array(alice_set[i]).astype('float32'), np.array(bob_set[j]).astype('float32')
+                vec_a = vec_a / np.linalg.norm(vec_a)
+                vec_b = vec_b / np.linalg.norm(vec_b)
+                
+                if dim == 2:
+                    prob = distribution_generator.probability_list(state, vec_a, vec_b)
+                if dim == 3:
+                    prob = distribution_generator_qutrit.probability_list(state, vec_a, vec_b)
+                probs = np.repeat(np.array([prob, ]), LHV_size, axis=0)
+                y = np.concatenate((y, probs), axis=0).astype('float32')
 
-            if dim == 2:
-                prob = distribution_generator.probability_list(state, vec_a, vec_b)
-            if dim == 3:
-                prob = distribution_generator_qutrit.probability_list(state, vec_a, vec_b)
-            probs = np.repeat(np.array([prob, ]), LHV_size, axis=0)
-            y = np.concatenate((y, probs), axis=0).astype('float32')
-
-            inputs = np.concatenate((np.repeat(
-                [vec_a + vec_b, ], LHV_size, axis=0), lhvs_1, lhvs_2), axis=1)
-            x = np.concatenate((x, inputs), axis=0).astype('float32')
+                inputs = np.concatenate((np.repeat(
+                    np.array([np.array([vec_a, vec_b]).flatten(),]), LHV_size, axis=0), lhvs_1, lhvs_2), axis=1)
+                x = np.concatenate((x, inputs), axis=0).astype('float32')
         yield (x, y)
 
 
@@ -301,3 +306,70 @@ def werner_run(n=4, start=0, end=1, step=10, a=CHSH_measurements()[0], b=CHSH_me
     savename = input()
     df = pd.DataFrame({'werner_parameter': w_array, 'loss': loss_array})
     df.to_csv(savename + '.csv')
+    
+    
+def CGLMP_training(noise=0.0, comm=False):
+    def projector_alice(a,x):
+        if x == 0:
+            alpha = 0
+        elif x == 1:
+            alpha = np.pi/3
+        ket = sum([np.exp(1j*2*np.pi/3*a*k) * np.exp(1j*k*alpha) / np.sqrt(3) * qt.basis(3,k) for k in range(3)])
+        return qt.ket2dm(ket.unit())
+
+
+    def projector_bob(b,y):
+        if y == 0:
+            beta = -np.pi/6
+        elif y == 1:
+            beta = np.pi/6
+        ket = sum([np.exp(1j*2*np.pi/3*b*k) * np.exp(1j*k*beta) / np.sqrt(3) * qt.basis(3,k) for k in range(3)])
+        return qt.ket2dm(ket.unit())
+
+
+    def CGLMP_probability(i,j,noise):
+        gamma = (np.sqrt(11) - np.sqrt(3))/2
+        ket = (qt.tensor(qt.basis(3,0), qt.basis(3,0)) \
+            + qt.tensor(qt.basis(3,1), qt.basis(3,1)) \
+            + gamma * qt.tensor(qt.basis(3,2), qt.basis(3,2))).unit()
+        state = noise * 1/9 * qt.tensor(qt.identity(3), qt.identity(3)) + (1-noise) * qt.ket2dm(ket)
+        res = np.ndarray(9)
+        for a in range(3):
+            for b in range(3):
+                P_a, P_b = projector_alice(a,i), projector_bob(b,j)
+                res[3*a+b] = np.real((qt.tensor(P_a, P_b) * state).tr())
+        return res
+        
+    if not comm:
+        model = CGLMP_local()
+    else:
+        model = CGLMP_nonlocal()
+    x = np.ndarray((4,2))
+    y_true = np.ndarray((4,9))
+    for i in range(2):
+        for j in range(2):
+           x[2*i+j,:] = [i,j]
+           y_true[2*i+j,:] = CGLMP_probability(i,j,noise=noise)
+    config.training_size = 4
+    config.LHV_size = 6000
+    config.LHV_type = 'uniform'
+    x = add_LHV(x)
+    y_true = np.repeat(y_true, config.LHV_size, axis=0)
+    
+    x = np.tile(x, (100, 1))
+    y_true = np.tile(y_true, (100,1))
+    
+    if not comm:
+        model.compile(loss=customLoss_multiple,
+            optimizer=config.optimizer, metrics=[])
+    else:
+        model.compile(loss=comm_customLoss_multiple,
+            optimizer=config.optimizer, metrics=[])
+    history = model.fit(x, y_true, batch_size=4*config.LHV_size,
+        epochs=50, verbose=0, shuffle=False)
+    return history.history['loss'][-1]
+
+for n in range(11):
+    print("noise = ", 0.1*n)
+    print(CGLMP_training(noise=0.1*n, comm=True))
+           
