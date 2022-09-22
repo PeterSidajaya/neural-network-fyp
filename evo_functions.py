@@ -45,7 +45,7 @@ def generate_protocol(protocol, lhv):
     return data
 
 
-def plot_protocol(protocol, lhv):
+def plot_protocol(protocol, lhv, optional=None, savename=None, show=True, title=None):
     data = generate_protocol(protocol, lhv)
     plt.scatter(data[0], data[1], c=data[2], vmin=0, vmax=1)
 
@@ -54,8 +54,19 @@ def plot_protocol(protocol, lhv):
 
     phi, theta = spherical(lhv[1])
     plt.scatter(phi, theta, c='blue')
+    
+    if isinstance(optional, type(np.ndarray(1))):
+        phi, theta = spherical(optional)
+        plt.scatter(phi, theta, c='green')
 
-    plt.show()
+    if title:
+        plt.title(title)
+
+    if savename:
+        plt.savefig(savename)
+    
+    if show:
+        plt.show()
 
 
 def spherical(vector):
