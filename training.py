@@ -78,7 +78,7 @@ def create_generator_qutrit(state):
     config.number_of_LHV = 3
     
     while True:
-        x = np.ndarray((0, 6 + config.number_of_LHV))
+        x = np.ndarray((0, 30 + config.number_of_LHV))
         y = np.ndarray((0, 9))
         lhvs = random_unit_vectors(LHV_size, 3).astype('float32')
         for _ in range(num_of_measurement):
@@ -86,10 +86,10 @@ def create_generator_qutrit(state):
             prob = distribution_generator_qutrit.probability_list(state, vecs_a, vecs_b)
             probs = np.repeat(np.array([prob, ]), LHV_size, axis=0)
             y = np.concatenate((y, probs), axis=0).astype('float32')
-
+                  
             inputs = np.concatenate((np.repeat(
-                [distribution_generator_qutrit.parametrise(vecs_a), 
-                 distribution_generator_qutrit.parametrise(vecs_b), ],
+                [distribution_generator_qutrit.parametrise(vecs_a) + 
+                 distribution_generator_qutrit.parametrise(vecs_b)],
                 LHV_size, axis=0), lhvs), axis=1)
             x = np.concatenate((x, inputs), axis=0).astype('float32')
         yield (x, y)
@@ -115,7 +115,7 @@ def create_generator_qutrit_limited(state, alice_set, bob_set):
                 y = np.concatenate((y, probs), axis=0).astype('float32')
 
                 inputs = np.concatenate((np.repeat(
-                    [distribution_generator_qutrit.parametrise(vecs_a), 
+                    [distribution_generator_qutrit.parametrise(vecs_a) + 
                     distribution_generator_qutrit.parametrise(vecs_b), ],
                     LHV_size, axis=0), lhvs), axis=1)
                 x = np.concatenate((x, inputs), axis=0).astype('float32')
@@ -422,7 +422,7 @@ def CGLMP_training(noise=0.0, comm=False):
         epochs=50, verbose=0, shuffle=False)
     return history.history['loss'][-1]
 
-for n in range(11):
-    print("noise = ", 0.1*n)
-    print(CGLMP_training(noise=0.1*n, comm=True))
+# for n in range(11):
+#     print("noise = ", 0.1*n)
+#     print(CGLMP_training(noise=0.1*n, comm=True))
            

@@ -17,8 +17,8 @@ minimas = []
 histories = []
 K.clear_session()
 
-model = build_Model_v3()
-keras.utils.plot_model(model, to_file='qutrit_v3.png',show_shapes=True, dpi=300)
+model = build_Model_qutrit()
+keras.utils.plot_model(model, to_file='qutrit_newest.png',show_shapes=True, dpi=300)
 print("Model finished.")
 
 ket = (qt.tensor(qt.basis(3,0), qt.basis(3,0)) + qt.tensor(qt.basis(3,1), qt.basis(3,1)) + qt.tensor(qt.basis(3,2), qt.basis(3,2))).unit()
@@ -28,9 +28,7 @@ minimas = []
 histories = []
 K.clear_session()
 
-alice_set = [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1],[1,1,1]]
-bob_set = [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1],[1,1,1]]
-minima, history = train_generator(model, create_generator_limited(state, alice_set, bob_set, dim=3), save=True,
+minima, history = train_generator(model, create_generator_qutrit(state), save=True,
                         save_name=folder_name + 'spin_model.h5', loss=comm_customLoss_multiple, steps=50)
 minimas.append(minima)
 histories.append(history)
