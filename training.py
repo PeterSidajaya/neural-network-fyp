@@ -33,7 +33,6 @@ def create_generator(state, dim=2):
 
             inputs = np.concatenate((np.repeat(
                 [vec_a + vec_b, ], LHV_size, axis=0), lhvs_1, lhvs_2), axis=1)
-            print(inputs.shape)
             x = np.concatenate((x, inputs), axis=0).astype('float32')
         yield (x, y)
 
@@ -369,7 +368,7 @@ def CGLMP_training(noise=0.0, comm=False):
         epochs=50, verbose=0, shuffle=False)
     return history.history['loss'][-1]
 
-for n in range(11):
-    print("noise = ", 0.1*n)
-    print(CGLMP_training(noise=0.1*n, comm=True))
+# for n in range(11):
+#     print("noise = ", 0.1*n)
+#     print(CGLMP_training(noise=0.1*n, comm=True))
            

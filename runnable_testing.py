@@ -11,14 +11,14 @@ from matplotlib import rcParams
 rcParams['font.family'] = 'serif'
 
 
-# qutrit
-folder_name = "qutrit\\"
-state = qt.tensor(qt.identity(3), qt.identity(3))
+# # qutrit
+# folder_name = "qutrit\\"
+# state = qt.tensor(qt.identity(3), qt.identity(3))
 
 
-model = keras.models.load_model(folder_name + "qubit.h5", compile=False)
-config.training_size = 1
-print(predict(model, np.array([[0,0,1,0,0,1]]), comm=False))
+# model = keras.models.load_model(folder_name + "qubit.h5", compile=False)
+# config.training_size = 1
+# print(predict(model, np.array([[0,0,1,0,0,1]]), comm=False))
 
 # old
 folder_name = "NewModel\\TV\\3pi-16_singlet_2\\"
