@@ -311,11 +311,96 @@ def build_NewModel_Afix():
     return model
 
 
-def keras_distance(p, q):
+def build_Model_v3():
+    """Build a model with one bit of communication between parties.
+    """
+    if not (config.LHV_type == "vector pair"):
+        raise ValueError("LHV must use vector pair!")
+    # Number of hidden variables, i.e. 6 for vector pair
+    number_of_LHV = config.number_of_LHV
+    depth = config.party_depth
+    width = config.party_width
+    outputsize = config.party_outputsize
+    activ = config.activation_func
+    activ2 = 'softmax'
+    activ3 = config.activation_func_comm
+    # 6 numbers (two 3D vectors) plus one hidden variable as inputs.
+    inputTensor = Input((6 + 6,))
+
+    # Group input tensor according to whether alpha, beta or gamma hidden variable.
+    group_alpha = Lambda(lambda x: x[:, 0:3], output_shape=((3,)))(inputTensor)
+    group_beta = Lambda(lambda x: x[:, 3:6], output_shape=((3,)))(inputTensor)
+
+    group_LHV_1 = Lambda(lambda x: x[:, 6:9], output_shape=((3,)))(inputTensor)
+    group_alpha_dot_1 = Dot(axes=1)([group_alpha, group_LHV_1])
+    group_beta_dot_1 = Dot(axes=1)([group_beta, group_LHV_1])
+
+    group_LHV_2 = Lambda(lambda x: x[:, 9:12],
+                         output_shape=((3,)))(inputTensor)
+    group_alpha_dot_2 = Dot(axes=1)([group_alpha, group_LHV_2])
+    group_beta_dot_2 = Dot(axes=1)([group_beta, group_LHV_2])
+
+    group_lhv_dot = Dot(axes=1)([group_LHV_1, group_LHV_2])
+
+    # Route hidden variables to parties Alice and Bob
+    group_a = Concatenate()(
+        [group_alpha, group_LHV_1, group_LHV_2, group_alpha_dot_1, group_alpha_dot_2, group_lhv_dot])
+    group_b = Concatenate()(
+        [group_beta, group_LHV_1, group_LHV_2, group_beta_dot_1, group_beta_dot_2, group_lhv_dot])
+    group_c = Concatenate()(
+        [group_alpha, group_LHV_1, group_LHV_2, group_alpha_dot_1, group_alpha_dot_2, group_lhv_dot])
+
+    # Neural network at the parties Alice, Bob
+    # Note: increasing the variance of the initialization seemed to help in some cases, especially when the number if outputs per party is 4 or more.
+    kernel_init = tf.keras.initializers.VarianceScaling(
+        scale=2, mode='fan_in', distribution='truncated_normal', seed=None)
+    
+    group_a1 = Dense(width, activation=activ,
+                        kernel_initializer=kernel_init)(group_a)
+    group_b1 = Dense(width, activation=activ,
+                        kernel_initializer=kernel_init)(group_b)
+    group_a2 = Dense(width, activation=activ,
+                        kernel_initializer=kernel_init)(group_a)
+    group_b2 = Dense(width, activation=activ,
+                        kernel_initializer=kernel_init)(group_b)
+    group_c = Dense(width, activation=activ,
+                    kernel_initializer=kernel_init)(group_c)
+
+    for _ in range(depth-1):
+        group_a1 = Dense(width, activation=activ,
+                         kernel_initializer=kernel_init)(group_a1)
+        group_b1 = Dense(width, activation=activ,
+                         kernel_initializer=kernel_init)(group_b1)
+        group_a2 = Dense(width, activation=activ,
+                         kernel_initializer=kernel_init)(group_a2)
+        group_b2 = Dense(width, activation=activ,
+                         kernel_initializer=kernel_init)(group_b2)
+        group_c = Dense(width, activation=activ,
+                        kernel_initializer=kernel_init)(group_c)
+
+    # Apply final softmax layer
+    group_a1 = Dense(outputsize, activation=activ2)(group_a1)
+    group_b1 = Dense(outputsize, activation=activ2)(group_b1)
+    group_a2 = Dense(outputsize, activation=activ2)(group_a2)
+    group_b2 = Dense(outputsize, activation=activ2)(group_b2)
+    group_c = Dense(1, activation=activ3)(group_c)
+
+    outputTensor = Concatenate()(
+        [group_c, group_a1, group_b1, group_a2, group_b2])
+
+    model = Model(inputTensor, outputTensor)
+    return model
+    
+
+
+def keras_distance(p, q, type=None):
     """ Distance used in loss function."""
-    p = K.clip(p, K.epsilon(), 1)
-    q = K.clip(q, K.epsilon(), 1)
-    return K.sum(p * K.log(p / q), axis=-1)
+    if not type:
+        p = K.clip(p, K.epsilon(), 1)
+        q = K.clip(q, K.epsilon(), 1)
+        return K.sum(p * K.log(p / q), axis=-1)
+    elif type == 'tvd':
+        return K.sum(K.abs(p - q))/2
 
 
 def customLoss_distr(y_pred):
@@ -367,20 +452,20 @@ def customLoss_distr_multiple(y_pred):
     return probs_list
 
 
-def customLoss_multiple(y_true, y_pred):
+def customLoss_multiple(y_true, y_pred, type=None):
     """ Custom loss function."""
     # Note that y_true is just LHV_size copies of the target distributions. So any row could be taken here. We just take 0-th row.
     probs_list = customLoss_distr_multiple(y_pred)
     loss = 0
     for i in range(config.training_size):
-        loss += keras_distance(y_true[config.LHV_size*i, :], probs_list[i])
+        loss += keras_distance(y_true[config.LHV_size*i, :], probs_list[i], type=type)
     return loss / config.training_size
 
 
 def comm_customLoss_distr_multiple(y_pred):
     """ Converts the output of the neural network to several probability vectors.
     That is from a shape of (batch_size, 1 + outputsize + outputsize + outputsize + outputsize)
-    to a shape of (training_size, outputsize * outputsize).
+    to a shape of (batch_size, outputsize * outputsize).
     Used for the communication model only!
     """
     outputsize = config.party_outputsize
@@ -414,13 +499,13 @@ def comm_customLoss_distr_multiple(y_pred):
     return probs_list
 
 
-def comm_customLoss_multiple(y_true, y_pred):
+def comm_customLoss_multiple(y_true, y_pred, type=None):
     """ Custom loss function. Used for the communication model only!"""
     # Note that y_true is just LHV_size copies of the target distributions. So any row could be taken here. We just take 0-th row.
     probs_list = comm_customLoss_distr_multiple(y_pred)
     loss = 0
     for i in range(config.training_size):
-        loss += keras_distance(y_true[config.LHV_size*i, :], probs_list[i])
+        loss += keras_distance(y_true[config.LHV_size*i, :], probs_list[i], type=type)
     return loss / config.training_size
 
 
@@ -522,3 +607,39 @@ def CGLMP_nonlocal():
 
     model = Model(inputTensor, outputTensor)
     return model
+
+def comm_customLoss_local_distr_multiple(y_pred):
+    """ Converts the output of the neural network to several probability vectors.
+    That is from a shape of (batch_size, 1 + outputsize + outputsize + outputsize + outputsize)
+    to a shape of (batch_size, 2 * outputsize * outputsize + 1).
+    Used for the communication model only!
+    """
+    outputsize = config.party_outputsize
+    LHV_size = config.LHV_size
+    probs_list = []
+    for i in range(config.training_size):
+        c_probs = y_pred[LHV_size*i:LHV_size*(i+1), 0:1]
+        a_probs_1 = y_pred[LHV_size*i:LHV_size*(i+1), 1:1*outputsize+1]
+        b_probs_1 = y_pred[LHV_size*i:LHV_size *
+                           (i+1), 1*outputsize+1:2*outputsize+1]
+        a_probs_2 = y_pred[LHV_size*i:LHV_size *
+                           (i+1), 2*outputsize+1:3*outputsize+1]
+        b_probs_2 = y_pred[LHV_size*i:LHV_size *
+                           (i+1), 3*outputsize+1:4*outputsize+1]
+
+        a_probs_1 = K.reshape(a_probs_1, (-1, outputsize, 1))
+        b_probs_1 = K.reshape(b_probs_1, (-1, 1, outputsize))
+
+        a_probs_2 = K.reshape(a_probs_2, (-1, outputsize, 1))
+        b_probs_2 = K.reshape(b_probs_2, (-1, 1, outputsize))
+
+        probs_1 = a_probs_1 * b_probs_1
+        probs_1 = K.reshape(probs_1, (-1, outputsize * outputsize))
+        probs_2 = a_probs_2 * b_probs_2
+        probs_2 = K.reshape(probs_2, (-1, outputsize * outputsize))
+        probs = Concatenate()([probs_1, probs_2, c_probs])
+        probs = K.mean(probs, axis=0)
+
+        probs_list.append(probs)
+    return np.array(probs_list)
+

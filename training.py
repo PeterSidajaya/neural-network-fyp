@@ -2,7 +2,7 @@ from distribution_generator import generate_mixed, generate_werner, CHSH_measure
 from neural_network_util import build_model, build_model_comm, customLoss_multiple, comm_customLoss_multiple, CGLMP_local, CGLMP_nonlocal
 from preprocess import open_dataset, add_LHV
 import distribution_generator
-import distribution_generator_qutrit
+import distribution_generator_qutrit_spin
 import tensorflow.keras.backend as K
 import numpy as np
 import pandas as pd
@@ -27,13 +27,12 @@ def create_generator(state, dim=2):
             if dim == 2:
                 prob = distribution_generator.probability_list(state, vec_a, vec_b)
             if dim == 3:
-                prob = distribution_generator_qutrit.probability_list(state, vec_a, vec_b)
+                prob = distribution_generator_qutrit_spin.probability_list(state, vec_a, vec_b)
             probs = np.repeat(np.array([prob, ]), LHV_size, axis=0)
             y = np.concatenate((y, probs), axis=0).astype('float32')
 
             inputs = np.concatenate((np.repeat(
                 [vec_a + vec_b, ], LHV_size, axis=0), lhvs_1, lhvs_2), axis=1)
-            print(inputs.shape)
             x = np.concatenate((x, inputs), axis=0).astype('float32')
         yield (x, y)
 
@@ -59,7 +58,7 @@ def create_generator_limited(state, alice_set, bob_set, dim=2):
                 if dim == 2:
                     prob = distribution_generator.probability_list(state, vec_a, vec_b)
                 if dim == 3:
-                    prob = distribution_generator_qutrit.probability_list(state, vec_a, vec_b)
+                    prob = distribution_generator_qutrit_spin.probability_list(state, vec_a, vec_b)
                 probs = np.repeat(np.array([prob, ]), LHV_size, axis=0)
                 y = np.concatenate((y, probs), axis=0).astype('float32')
 
