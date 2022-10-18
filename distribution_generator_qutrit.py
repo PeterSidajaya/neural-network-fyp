@@ -60,8 +60,8 @@ def parametrise(vector_list):
 def probability_dict(state, vector_set_a, vector_set_b):
     """Returns the probabilities of a joint measurement defined by two unit vectors on an entangled state."""
     prob = {}
-    for i in range(2):
-        for j in range(2):
+    for i in range(3):
+        for j in range(3):
             op_a = qt.ket2dm(vector_set_a[i])
             op_b = qt.ket2dm(vector_set_b[j])
             prob[i, j] = (qt.tensor(op_a, op_b)
@@ -72,8 +72,8 @@ def probability_dict(state, vector_set_a, vector_set_b):
 def probability_list(state, vector_set_a, vector_set_b):
     """Returns the probabilities of a joint measurement defined by two unit vectors on an entangled state."""
     prob = []
-    for i in range(2):
-        for j in range(2):
+    for i in range(3):
+        for j in range(3):
             op_a = qt.ket2dm(vector_set_a[i])
             op_b = qt.ket2dm(vector_set_b[j])
             p = (qt.tensor(op_a, op_b) * state).tr()
