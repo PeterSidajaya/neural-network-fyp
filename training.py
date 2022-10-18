@@ -1,7 +1,9 @@
 from distribution_generator import generate_mixed, generate_werner, CHSH_measurements, random_unit_vector, random_unit_vectors
+from distribution_generator_qutrit import random_orthonormal_basis
 from neural_network_util import build_model, build_model_comm, customLoss_multiple, comm_customLoss_multiple, CGLMP_local, CGLMP_nonlocal
 from preprocess import open_dataset, add_LHV
 import distribution_generator
+import distribution_generator_qutrit
 import distribution_generator_qutrit_spin
 import tensorflow.keras.backend as K
 import numpy as np
@@ -13,6 +15,7 @@ import config
 
 
 def create_generator(state, dim=2):
+    config.party_outputsize = dim
     num_of_measurement = config.training_size
     LHV_size = config.LHV_size
     batch_size = num_of_measurement * LHV_size
@@ -38,6 +41,7 @@ def create_generator(state, dim=2):
 
 
 def create_generator_limited(state, alice_set, bob_set, dim=2):
+    config.party_outputsize = dim
     num_of_measurement = len(alice_set) * len(bob_set)
     config.training_size = num_of_measurement
     LHV_size = config.LHV_size
@@ -64,6 +68,56 @@ def create_generator_limited(state, alice_set, bob_set, dim=2):
 
                 inputs = np.concatenate((np.repeat(
                     np.array([np.array([vec_a, vec_b]).flatten(),]), LHV_size, axis=0), lhvs_1, lhvs_2), axis=1)
+                x = np.concatenate((x, inputs), axis=0).astype('float32')
+        yield (x, y)
+        
+def create_generator_qutrit(state):
+    config.party_outputsize = 3
+    num_of_measurement = config.training_size
+    LHV_size = config.LHV_size
+    config.number_of_LHV = 3
+    
+    while True:
+        x = np.ndarray((0, 6 + config.number_of_LHV))
+        y = np.ndarray((0, 9))
+        lhvs = random_unit_vectors(LHV_size, 3).astype('float32')
+        for _ in range(num_of_measurement):
+            vecs_a, vecs_b = random_orthonormal_basis(3), random_orthonormal_basis(3)
+            prob = distribution_generator_qutrit.probability_list(state, vecs_a, vecs_b)
+            probs = np.repeat(np.array([prob, ]), LHV_size, axis=0)
+            y = np.concatenate((y, probs), axis=0).astype('float32')
+
+            inputs = np.concatenate((np.repeat(
+                [distribution_generator_qutrit.parametrise(vecs_a), 
+                 distribution_generator_qutrit.parametrise(vecs_b), ],
+                LHV_size, axis=0), lhvs), axis=1)
+            x = np.concatenate((x, inputs), axis=0).astype('float32')
+        yield (x, y)
+
+
+def create_generator_qutrit_limited(state, alice_set, bob_set):
+    config.party_outputsize = 3
+    num_of_measurement = len(alice_set) * len(bob_set)
+    config.training_size = num_of_measurement
+    LHV_size = config.LHV_size
+    config.number_of_LHV = 3
+    
+    while True:
+        x = np.ndarray((0, 6 + config.number_of_LHV))
+        y = np.ndarray((0, 9))
+        lhvs = random_unit_vectors(LHV_size, 3).astype('float32')
+        for i in range(len(alice_set)):
+            for j in range(len(bob_set)):
+                vecs_a, vecs_b = np.array(alice_set[i]), np.array(bob_set[j])
+
+                prob = distribution_generator_qutrit.probability_list(state, vecs_a, vecs_b)
+                probs = np.repeat(np.array([prob, ]), LHV_size, axis=0)
+                y = np.concatenate((y, probs), axis=0).astype('float32')
+
+                inputs = np.concatenate((np.repeat(
+                    [distribution_generator_qutrit.parametrise(vecs_a), 
+                    distribution_generator_qutrit.parametrise(vecs_b), ],
+                    LHV_size, axis=0), lhvs), axis=1)
                 x = np.concatenate((x, inputs), axis=0).astype('float32')
         yield (x, y)
 

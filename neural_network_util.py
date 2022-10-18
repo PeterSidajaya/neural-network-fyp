@@ -390,7 +390,75 @@ def build_Model_v3():
 
     model = Model(inputTensor, outputTensor)
     return model
+
+
+def build_Model_qutrit():
+    """Build a model with one bit of communication between parties.
+    """
+    # Number of hidden variables, i.e. 6 for vector pair
+    number_of_LHV = config.number_of_LHV
+    depth = config.party_depth
+    width = config.party_width
+    outputsize = config.party_outputsize
+    activ = config.activation_func
+    activ2 = 'softmax'
+    activ3 = config.activation_func_comm
+    # 6 numbers (two 3D vectors) plus one hidden variable as inputs.
+    inputTensor = Input((6 + config.number_of_LHV,))
+
+    # Group input tensor according to whether alpha, beta or gamma hidden variable.
+    group_alpha = Lambda(lambda x: x[:, 0:3], output_shape=((3,)))(inputTensor)
+    group_beta = Lambda(lambda x: x[:, 3:6], output_shape=((3,)))(inputTensor)
+    group_LHV = Lambda(lambda x: x[:, 6:9], output_shape=((3,)))(inputTensor)
+
+    # Route hidden variables to parties Alice and Bob
+    group_a = Concatenate()(
+        [group_alpha, group_LHV])
+    group_b = Concatenate()(
+        [group_beta, group_LHV])
+    group_c = Concatenate()(
+        [group_alpha, group_LHV])
+
+    # Neural network at the parties Alice, Bob
+    # Note: increasing the variance of the initialization seemed to help in some cases, especially when the number if outputs per party is 4 or more.
+    kernel_init = tf.keras.initializers.VarianceScaling(
+        scale=2, mode='fan_in', distribution='truncated_normal', seed=None)
     
+    group_a1 = Dense(width, activation=activ,
+                        kernel_initializer=kernel_init)(group_a)
+    group_b1 = Dense(width, activation=activ,
+                        kernel_initializer=kernel_init)(group_b)
+    group_a2 = Dense(width, activation=activ,
+                        kernel_initializer=kernel_init)(group_a)
+    group_b2 = Dense(width, activation=activ,
+                        kernel_initializer=kernel_init)(group_b)
+    group_c = Dense(width, activation=activ,
+                    kernel_initializer=kernel_init)(group_c)
+
+    for _ in range(depth-1):
+        group_a1 = Dense(width, activation=activ,
+                         kernel_initializer=kernel_init)(group_a1)
+        group_b1 = Dense(width, activation=activ,
+                         kernel_initializer=kernel_init)(group_b1)
+        group_a2 = Dense(width, activation=activ,
+                         kernel_initializer=kernel_init)(group_a2)
+        group_b2 = Dense(width, activation=activ,
+                         kernel_initializer=kernel_init)(group_b2)
+        group_c = Dense(width, activation=activ,
+                        kernel_initializer=kernel_init)(group_c)
+
+    # Apply final softmax layer
+    group_a1 = Dense(outputsize, activation=activ2)(group_a1)
+    group_b1 = Dense(outputsize, activation=activ2)(group_b1)
+    group_a2 = Dense(outputsize, activation=activ2)(group_a2)
+    group_b2 = Dense(outputsize, activation=activ2)(group_b2)
+    group_c = Dense(1, activation=activ3)(group_c)
+
+    outputTensor = Concatenate()(
+        [group_c, group_a1, group_b1, group_a2, group_b2])
+
+    model = Model(inputTensor, outputTensor)
+    return model
 
 
 def keras_distance(p, q, type=None):
