@@ -21,6 +21,11 @@ model = build_Model_qutrit()
 keras.utils.plot_model(model, to_file='qutrit_newest.png',show_shapes=True, dpi=300)
 print("Model finished.")
 
+alice_set = []
+for _ in range(5):
+    alice_set.append(random_orthonormal_basis(3))
+bob_set = alice_set.copy()
+
 ket = (qt.tensor(qt.basis(3,0), qt.basis(3,0)) + qt.tensor(qt.basis(3,1), qt.basis(3,1)) + qt.tensor(qt.basis(3,2), qt.basis(3,2))).unit()
 state = qt.ket2dm(ket)
 
@@ -28,7 +33,7 @@ minimas = []
 histories = []
 K.clear_session()
 
-minima, history = train_generator(model, create_generator_qutrit(state), save=True,
+minima, history = train_generator(model, create_generator_qutrit_limited(state, alice_set, bob_set), save=True,
                         save_name=folder_name + 'spin_model.h5', loss=comm_customLoss_multiple, steps=50)
 minimas.append(minima)
 histories.append(history)

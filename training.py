@@ -82,14 +82,14 @@ def create_generator_qutrit(state):
         y = np.ndarray((0, 9))
         lhvs = random_unit_vectors(LHV_size, 3).astype('float32')
         for _ in range(num_of_measurement):
-            vecs_a, vecs_b = random_orthonormal_basis(3), random_orthonormal_basis(3)
-            prob = distribution_generator_qutrit.probability_list(state, vecs_a, vecs_b)
+            vec_set_a, vec_set_b = random_orthonormal_basis(3), random_orthonormal_basis(3)
+            prob = distribution_generator_qutrit.probability_list(state, vec_set_a, vec_set_b)
             probs = np.repeat(np.array([prob, ]), LHV_size, axis=0)
             y = np.concatenate((y, probs), axis=0).astype('float32')
                   
             inputs = np.concatenate((np.repeat(
-                [distribution_generator_qutrit.parametrise(vecs_a) + 
-                 distribution_generator_qutrit.parametrise(vecs_b)],
+                [distribution_generator_qutrit.parametrise(vec_set_a) + 
+                 distribution_generator_qutrit.parametrise(vec_set_b)],
                 LHV_size, axis=0), lhvs), axis=1)
             x = np.concatenate((x, inputs), axis=0).astype('float32')
         yield (x, y)
@@ -103,20 +103,20 @@ def create_generator_qutrit_limited(state, alice_set, bob_set):
     config.number_of_LHV = 3
     
     while True:
-        x = np.ndarray((0, 6 + config.number_of_LHV))
+        x = np.ndarray((0, 30 + config.number_of_LHV))
         y = np.ndarray((0, 9))
         lhvs = random_unit_vectors(LHV_size, 3).astype('float32')
         for i in range(len(alice_set)):
             for j in range(len(bob_set)):
-                vecs_a, vecs_b = np.array(alice_set[i]), np.array(bob_set[j])
+                vec_set_a, vec_set_b = alice_set[i], bob_set[j]
 
-                prob = distribution_generator_qutrit.probability_list(state, vecs_a, vecs_b)
+                prob = distribution_generator_qutrit.probability_list(state, vec_set_a, vec_set_b)
                 probs = np.repeat(np.array([prob, ]), LHV_size, axis=0)
                 y = np.concatenate((y, probs), axis=0).astype('float32')
 
                 inputs = np.concatenate((np.repeat(
-                    [distribution_generator_qutrit.parametrise(vecs_a) + 
-                    distribution_generator_qutrit.parametrise(vecs_b), ],
+                    [distribution_generator_qutrit.parametrise(vec_set_a) + 
+                    distribution_generator_qutrit.parametrise(vec_set_b), ],
                     LHV_size, axis=0), lhvs), axis=1)
                 x = np.concatenate((x, inputs), axis=0).astype('float32')
         yield (x, y)
