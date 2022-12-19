@@ -74,7 +74,7 @@ def plot_comm_distr_number(distr, type='spherical'):
     plt.show()
 
 
-def validate(model, state, n=4096, comm=True):
+def validate(model, state, n=4096, comm=True, type=None):
     """Validate the performance of the model by generating random settings"""
     config.training_size = n
     dataset = generate_dataset(state, n)
@@ -83,9 +83,9 @@ def validate(model, state, n=4096, comm=True):
     y_predict = tf.cast(model.predict(x_LHV), tf.float32)
     y_true = tf.cast(np.repeat(y_true, config.LHV_size, axis=0), tf.float32)
     if comm:
-        score = comm_customLoss_multiple(y_true, y_predict)
+        score = comm_customLoss_multiple(y_true, y_predict, type=type)
     else:
-        score = customLoss_multiple(y_true, y_predict)
+        score = customLoss_multiple(y_true, y_predict, type=type)
     return score
 
 
@@ -209,13 +209,20 @@ def plot_comm_distr_vector(distr, type='spherical', color='comm', set_axes=None,
     if type == 'scatter':
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
-        img = ax.scatter(xdata, ydata, zdata, c=c, vmin=vmin, vmax=vmax)
-        ax.set_xlabel('x')
-        ax.set_ylabel('y')
+
+        img = ax.scatter(ydata, xdata, zdata, c=c, vmin=vmin, vmax=vmax)
+        ax.plot([0, l1y[0]*1.25], [0, l1x[0]*1.25], [0, l1z[0]*1.25], 'r-o', linewidth=5)
+        ax.plot([0, l2y[0]*1.25], [0, l2x[0]*1.25], [0, l2z[0]*1.25], 'b-o', linewidth=5)
+        
+        ax.set_xlabel('y')
+        ax.set_ylabel('x')
         ax.set_zlabel('z')
         fig.subplots_adjust(right=0.8)
         cbar_ax = fig.add_axes([0.85, 0.15, 0.01, 0.7])
         fig.colorbar(img, cax=cbar_ax)
+        
+        ax.set_ylim(ax.get_ylim()[::-1])
+        
     elif type == 'spherical':
         theta_data = np.arccos(zdata)
         phi_data = np.arctan2(ydata, xdata)
@@ -268,11 +275,14 @@ def map_distr_SV_party(model, vec_alice=[0, 0, 1], vec_bob=[0, 0, 1], n=4096):
     return df
 
 
-def evaluate_marginals(model, theta, vec_alice, vec_bob, singlet=True):
+def evaluate_marginals(model, theta, vec_alice, vec_bob, singlet=True, local=False, strategy=0):
     config.training_size = 1
     config.LHV_size = 5000
-    xdata = np.array([vec_alice+vec_bob, ])
-    output = predict(model, xdata)[0]
+    xdata = np.array([np.concatenate([vec_alice, vec_bob]), ])
+    if not local:
+        output = predict(model, xdata)[0]
+    else:
+        output = predict_local(model, xdata, strategy=strategy)[0]
     if singlet:
         print('Marginal of Alice')
         print('Predicted :', output[0]+output[1]-output[2]-output[3])
@@ -384,3 +394,21 @@ def plot_marginal_alice_semicircle(model, m=100, n=10000, fix=False):
     plt.show()
 
     return df
+
+
+def predict_local(model, x, strategy=0):
+    """Predict the probability distributions given a model and some inputs x"""
+    x_LHV = add_LHV(x)
+    y_predict = model.predict(x_LHV)
+    probs_predict = comm_customLoss_local_distr_multiple(y_predict)[:,4*strategy:4*strategy+4]
+    return probs_predict
+
+
+def comm_balance(model, vec_alice, vec_bob):
+    """Predict the probability distributions given a model and some inputs x"""
+    config.LHV_size = 100000
+    x = np.array([np.concatenate([vec_alice, vec_bob]), ])
+    x_LHV = add_LHV(x)
+    y_predict = model.predict(x_LHV)
+    comms = comm_customLoss_local_distr_multiple(y_predict)[:,-1]
+    return np.average(comms)

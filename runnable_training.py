@@ -24,6 +24,7 @@ state = qt.ket2dm(nme_singlet(np.pi/4))
 
 minima, history = train_generator(model, create_generator(state), save=True,
                         save_name=folder_name + 'pi-4_model.h5', loss=comm_customLoss_multiple, steps=50)
+
 minimas.append(minima)
 histories.append(history)
 

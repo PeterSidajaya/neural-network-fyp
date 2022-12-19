@@ -11,11 +11,13 @@ from matplotlib import rcParams
 rcParams['font.family'] = 'serif'
 
 
+
 folder_name = "qubit-pi-4/"
 state = qt.ket2dm(nme_singlet(np.pi/4))
 
 
 model = keras.models.load_model(folder_name + "pi-4_model.h5", compile=False)
+
 
 vec_x = np.array([1, 0, 0])
 vec_y = np.array([0, 1, 0])

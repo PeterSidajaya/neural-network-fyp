@@ -115,3 +115,74 @@ class MP(Individual):
     def _random_init(self, init_params):
         return np.array([np.array([[1,0,0],[0,1,0],[0,0,1]]) + np.random.normal(loc=0, scale=init_params['std'], size=(3,3))
                          for _ in range(init_params['dim'])])
+        
+
+class MP_lin(Individual):
+    def mutate(self, mutate_params):
+        self.value += np.array([np.random.normal(scale=mutate_params['std'])
+                                for _ in range(mutate_params['dim'])])
+    
+    def pair(self, other, pair_params):
+        return MP_lin(pair_params['alpha'] * self.value + (1-pair_params['alpha']) * other.value)
+    
+    def _random_init(self, init_params):
+        return np.array([np.random.normal(scale=init_params['std']) for _ in range(init_params['dim'])])
+
+
+class Hemisphere(Individual):
+    """
+    Individual for finding the axis of the hemisphere for Alice and Bob's output and their biases.
+    The values are the (hemisphere axis vector, bias).
+    """
+    def mutate(self, mutate_params):
+        self.value = (self.value[0] + np.random.normal(scale=mutate_params['std'], size=(3,)),
+                      self.value[1] + np.random.normal(scale=mutate_params['std']))
+        self.value = (self.value[0]/np.linalg.norm(self.value[0]), self.value[1])
+    
+    def pair(self, other, pair_params):
+        vec = pair_params['alpha'] * self.value[0] + (1-pair_params['alpha']) * other.value[0]
+        return Hemisphere(
+            (vec/np.linalg.norm(vec),
+             pair_params['alpha'] * self.value[1] + (1-pair_params['alpha']) * other.value[1]))
+    
+    def _random_init(self, init_params):
+        value = (np.random.normal(scale=init_params['std'], size=(3,)),
+                    np.random.normal(scale=init_params['std']))
+        return (value[0]/np.linalg.norm(value[0]), value[1])
+    
+
+class Weighting(Individual):
+    """
+    Individual for finding the weight for the analytical protocol of Alice and Bob's output.
+    The values are the (weight of lambda_1, drag of z).
+    """
+    def mutate(self, mutate_params):
+        self.value = (self.value[0] + np.random.normal(scale=mutate_params['std']),
+                      self.value[1] + np.random.normal(scale=mutate_params['std']))
+    
+    def pair(self, other, pair_params):
+        weight = pair_params['alpha'] * self.value[0] + (1-pair_params['alpha']) * other.value[0]
+        drag = pair_params['alpha'] * self.value[1] + (1-pair_params['alpha']) * other.value[1]
+        return Weighting((weight, drag))
+    
+    def _random_init(self, init_params):
+        value = (np.random.normal(loc=init_params['loc_weight'], scale=init_params['std']),
+                 np.random.normal(loc=init_params['loc_drag'], scale=init_params['std']))
+        return (value[0]/np.linalg.norm(value[0]), value[1])
+    
+
+class Bias(Individual):
+    """
+    Individual for finding the bias for the analytical protocol of Alice and Bob's output.
+    The value is the bias.
+    """
+    def mutate(self, mutate_params):
+        self.value = self.value + np.random.normal(scale=mutate_params['std'])
+    
+    def pair(self, other, pair_params):
+        bias = pair_params['alpha'] * self.value + (1-pair_params['alpha']) * other.value
+        return Bias(bias)
+    
+    def _random_init(self, init_params):
+        value = np.random.normal(loc=init_params['loc'], scale=init_params['std'])
+        return value
