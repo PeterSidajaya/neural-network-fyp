@@ -11,30 +11,19 @@ import pickle
 from distribution_generator import *
 from training import *
 
-folder_name = "qutrit\\"
+folder_name = "qubit-pi-4/"
 
 minimas = []
 histories = []
 K.clear_session()
 
-model = build_Model_qutrit()
-keras.utils.plot_model(model, to_file='qutrit_newest.png',show_shapes=True, dpi=300)
+model = build_Model_v3()
 print("Model finished.")
 
-alice_set = []
-for _ in range(5):
-    alice_set.append(random_orthonormal_basis(3))
-bob_set = alice_set.copy()
+state = qt.ket2dm(nme_singlet(np.pi/4))
 
-ket = (qt.tensor(qt.basis(3,0), qt.basis(3,0)) + qt.tensor(qt.basis(3,1), qt.basis(3,1)) + qt.tensor(qt.basis(3,2), qt.basis(3,2))).unit()
-state = qt.ket2dm(ket)
-
-minimas = []
-histories = []
-K.clear_session()
-
-minima, history = train_generator(model, create_generator_qutrit_limited(state, alice_set, bob_set), save=True,
-                        save_name=folder_name + 'spin_model.h5', loss=comm_customLoss_multiple, steps=50)
+minima, history = train_generator(model, create_generator(state), save=True,
+                        save_name=folder_name + 'pi-4_model.h5', loss=comm_customLoss_multiple, steps=50)
 minimas.append(minima)
 histories.append(history)
 

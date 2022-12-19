@@ -19,6 +19,7 @@ class mp_fitness_creator():
     def create_fitness(self):
         def fitness(M):
             if self.model == None:
+                """What did I put this for? I guess we'll never know. I think it's just for testing."""
                 pred_probs, true_probs = np.zeros((self.lhv_size*self.input_size, 2)), np.zeros((self.lhv_size*self.input_size, 2))
                 for j in range(self.lhv_size):
                     lhv = self.lhvs[j,0:3], self.lhvs[j,3:6]

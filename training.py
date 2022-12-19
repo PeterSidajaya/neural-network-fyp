@@ -71,16 +71,20 @@ def create_generator_limited(state, alice_set, bob_set, dim=2):
                 x = np.concatenate((x, inputs), axis=0).astype('float32')
         yield (x, y)
         
-def create_generator_qutrit(state):
+def create_generator_qutrit(state, lhv_type='unit'):
     config.party_outputsize = 3
     num_of_measurement = config.training_size
     LHV_size = config.LHV_size
-    config.number_of_LHV = 3
     
     while True:
+        if lhv_type == 'unit':
+            lhvs = random_unit_vectors(LHV_size, 3).astype('float32')
+            config.number_of_LHV = 3
+        elif lhv_type == 'uniform':
+            lhvs = np.random.uniform(LHV_size, 1).astype('float32')
+            config.number_of_LHV = 1
         x = np.ndarray((0, 30 + config.number_of_LHV))
         y = np.ndarray((0, 9))
-        lhvs = random_unit_vectors(LHV_size, 3).astype('float32')
         for _ in range(num_of_measurement):
             vec_set_a, vec_set_b = random_orthonormal_basis(3), random_orthonormal_basis(3)
             prob = distribution_generator_qutrit.probability_list(state, vec_set_a, vec_set_b)
@@ -95,17 +99,21 @@ def create_generator_qutrit(state):
         yield (x, y)
 
 
-def create_generator_qutrit_limited(state, alice_set, bob_set):
+def create_generator_qutrit_limited(state, alice_set, bob_set, lhv_type='unit'):
     config.party_outputsize = 3
     num_of_measurement = len(alice_set) * len(bob_set)
     config.training_size = num_of_measurement
     LHV_size = config.LHV_size
-    config.number_of_LHV = 3
     
     while True:
+        if lhv_type == 'unit':
+            lhvs = random_unit_vectors(LHV_size, 3).astype('float32')
+            config.number_of_LHV = 3
+        elif lhv_type == 'uniform':
+            lhvs = np.random.uniform(LHV_size, 1).astype('float32')
+            config.number_of_LHV = 1
         x = np.ndarray((0, 30 + config.number_of_LHV))
         y = np.ndarray((0, 9))
-        lhvs = random_unit_vectors(LHV_size, 3).astype('float32')
         for i in range(len(alice_set)):
             for j in range(len(bob_set)):
                 vec_set_a, vec_set_b = alice_set[i], bob_set[j]
