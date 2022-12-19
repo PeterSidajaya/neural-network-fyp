@@ -11,24 +11,20 @@ import pickle
 from distribution_generator import *
 from training import *
 
-folder_name = "v3\\pi-4_singlet_1"
+folder_name = "qubit-pi-4/"
 
 minimas = []
 histories = []
 K.clear_session()
 
 model = build_Model_v3()
-keras.utils.plot_model(model, to_file='v3.png',show_shapes=True, dpi=300)
 print("Model finished.")
 
 state = qt.ket2dm(nme_singlet(np.pi/4))
 
-minimas = []
-histories = []
-K.clear_session()
-
 minima, history = train_generator(model, create_generator(state), save=True,
-                        save_name=folder_name + 'pi_4_model.h5', loss=comm_customLoss_multiple, steps=50)
+                        save_name=folder_name + 'pi-4_model.h5', loss=comm_customLoss_multiple, steps=50)
+
 minimas.append(minima)
 histories.append(history)
 
