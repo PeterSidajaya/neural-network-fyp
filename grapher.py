@@ -5,6 +5,7 @@ import seaborn as sns
 import qutip as qt
 import numpy as np
 
+"""Deprecated. This was used to plot finite measurements to a Bloch sphere."""
 
 def plot_measurements(vector_alice_list, color=True):
     num = len(vector_alice_list)

@@ -3,6 +3,9 @@ import numpy as np
 from evo_protocols import *
 import config
 
+"""The files here mostly contain functions that are used to create fitness functions. For what each of them does, please
+refer to the runnable_evo.py file."""
+
 class mp_fitness_creator():
     def __init__(self, model=None, lhv_size=20, input_size=200, slice='Alice_1') -> None:
         self.model = model
@@ -230,13 +233,14 @@ class hemisphere_fitness_creator():
     
 class weighting_fitness_creator():
     """Class used to generate fitness function to find the weights in the analytical outpus of Alice and Bob."""
-    def __init__(self, model=None, lhv_settings_size=100, input_size=100, slice='Alice_1') -> None:
+    def __init__(self, model=None, lhv_settings_size=100, input_size=100, slice='Alice_1', sign=-1) -> None:
         self.model = model
         self.lhv_settings_size = lhv_settings_size
         self.input_size = input_size
         self.slice = slice
-        config.training_size = 100
-        config.LHV_size = 100
+        self.sign = sign
+        config.training_size = input_size
+        config.LHV_size = lhv_settings_size
     
     def generate(self):
         self.inputs = random_vectors(self.input_size, 3)
@@ -258,7 +262,7 @@ class weighting_fitness_creator():
                 for j in range(self.input_size):
                     input = self.inputs[j]
                     # Edit here for the true and fitted function
-                    prob = 1/2 - 1/2 * np.sign(dot(input, Weighting.value[0]*lhv_1+lhv_2+Weighting.value[1]*np.array([0,0,1])))
+                    prob = 1/2 + self.sign * 1/2 * np.sign(dot(input, Weighting.value[0]*lhv_1+lhv_2+Weighting.value[1]*np.array([0,0,1])))
                     pred = [prob, 1-prob]
                     probs[j,:] = pred
             
@@ -278,13 +282,14 @@ class weighting_fitness_creator():
 
 class bias_fitness_creator():
     """Class used to find the biases in the analytical outpus of Alice and Bob."""
-    def __init__(self, model=None, lhv=(np.array([0,0,1]),np.array([0,0,1])), weights=(1.0,0.0), input_size=2000, slice='Alice_1') -> None:
+    def __init__(self, model=None, lhv=(np.array([0,0,1]),np.array([0,0,1])), weights=(1.0,0.0), input_size=2000, slice='Alice_1', sign=-1) -> None:
         self.model = model
         self.lhv = lhv
         self.input_size = input_size
         self.slice = slice
         self.weights = weights
-    
+        self.sign = sign
+
     def generate(self):
         self.inputs = random_vectors(self.input_size, 3)
         self.lhvs = np.array([np.concatenate((self.lhv[0], self.lhv[1])),])
@@ -299,7 +304,7 @@ class bias_fitness_creator():
                 input = self.inputs[i]
                 # Edit here for the true and fitted function
                 lambda_g = self.weights[0] * self.lhv[0] + self.lhv[1] + self.weights[1] * np.array([0,0,1])
-                prob = 1/2 - 1/2 * np.sign(dot(input, lambda_g) + Bias.value)
+                prob = 1/2 + self.sign * 1/2 * np.sign(dot(input, lambda_g) + Bias.value)
                 pred = [prob, 1-prob]
                 probs[i,:] = pred
             
@@ -316,5 +321,134 @@ class bias_fitness_creator():
             
             res = KL_distance(true, probs)/(self.input_size)
             return -res
+        
+        return fitness
+
+
+
+class bias_coefficient_fitness_creator():
+    def __init__(self, folder_name):
+        self.theta_array = np.loadtxt(folder_name + '1-x/phi.txt')
+        self.phi_array = np.loadtxt(folder_name + '1-x/theta.txt')
+        self.x1 = np.loadtxt(folder_name + '1-x/bias.txt')
+        self.z1 = np.loadtxt(folder_name + '1-z/bias.txt')
+        self.minz1 = np.loadtxt(folder_name + '1--z/bias.txt')
+        self.x2 = np.loadtxt(folder_name + '2-x/bias.txt')
+        self.z2 = np.loadtxt(folder_name + '2-z/bias.txt')
+        self.minz2 = np.loadtxt(folder_name + '2--z/bias.txt')
+    
+    def create_fitness(self):
+        def fitness(Bias):
+            res = 0
+            
+            # This is for 1-x
+            c = np.ndarray((21,20))
+            for i in range(21):
+                for j in range(20):
+                    theta = self.theta_array[i,j]
+                    phi = self.phi_array[i,j]
+                    lhv_var = np.array([np.sin(theta)*np.cos(phi),np.sin(theta)*np.sin(phi),np.cos(theta)])
+                    c[i,j] = Bias.value[0] + Bias.value[1] * np.array([1,0,0])[2] + Bias.value[2] * lhv_var[2]
+            res += np.sum((self.x1.mean(axis=0) - c.mean(axis=0))**2)
+            
+            # This is for 1-z
+            c = np.ndarray((21,20))
+            for i in range(21):
+                for j in range(20):
+                    theta = self.theta_array[i,j]
+                    phi = self.phi_array[i,j]
+                    lhv_var = np.array([np.sin(theta)*np.cos(phi),np.sin(theta)*np.sin(phi),np.cos(theta)])
+                    c[i,j] = Bias.value[0] + Bias.value[1] * np.array([0,0,1])[2] + Bias.value[2] * lhv_var[2]
+            res += np.sum((self.z1.mean(axis=0) - c.mean(axis=0))**2)
+            
+            # This is for 1--z
+            c = np.ndarray((21,20))
+            for i in range(21):
+                for j in range(20):
+                    theta = self.theta_array[i,j]
+                    phi = self.phi_array[i,j]
+                    lhv_var = np.array([np.sin(theta)*np.cos(phi),np.sin(theta)*np.sin(phi),np.cos(theta)])
+                    c[i,j] = Bias.value[0] + Bias.value[1] * np.array([0,0,-1])[2] + Bias.value[2] * lhv_var[2]
+            res += np.sum((self.minz1.mean(axis=0) - c.mean(axis=0))**2)
+            
+            # This is for 2-x
+            c = np.ndarray((21,20))
+            for i in range(21):
+                for j in range(20):
+                    theta = self.theta_array[i,j]
+                    phi = self.phi_array[i,j]
+                    lhv_var = np.array([np.sin(theta)*np.cos(phi),np.sin(theta)*np.sin(phi),np.cos(theta)])
+                    c[i,j] = Bias.value[0] + Bias.value[1] * lhv_var[2] + Bias.value[2] * np.array([1,0,0])[2]
+            res += np.sum((self.x2.mean(axis=0) - c.mean(axis=0))**2)
+            
+            # This is for 2-z
+            c = np.ndarray((21,20))
+            for i in range(21):
+                for j in range(20):
+                    theta = self.theta_array[i,j]
+                    phi = self.phi_array[i,j]
+                    lhv_var = np.array([np.sin(theta)*np.cos(phi),np.sin(theta)*np.sin(phi),np.cos(theta)])
+                    c[i,j] = Bias.value[0] + Bias.value[1] * lhv_var[2] + Bias.value[2] * np.array([0,0,1])[2]
+            res += np.sum((self.z2.mean(axis=0) - c.mean(axis=0))**2)
+            
+            # This is for 2--z
+            c = np.ndarray((21,20))
+            for i in range(21):
+                for j in range(20):
+                    theta = self.theta_array[i,j]
+                    phi = self.phi_array[i,j]
+                    lhv_var = np.array([np.sin(theta)*np.cos(phi),np.sin(theta)*np.sin(phi),np.cos(theta)])
+                    c[i,j] = Bias.value[0] + Bias.value[1] * lhv_var[2] + Bias.value[2] * np.array([0,0,-1])[2]
+            res += np.sum((self.minz2.mean(axis=0) - c.mean(axis=0))**2)
+            
+            return -res
+        
+        return fitness
+    
+
+class comm_coefficient_fitness_creator():
+    """Class used to generate fitness function to find the coefficients in the bit of communication."""
+    def __init__(self, model=None, lhv_settings_size=50, input_size=500) -> None:
+        self.model = model
+        self.lhv_settings_size = lhv_settings_size
+        self.input_size = input_size
+        config.training_size = input_size
+        config.LHV_size = lhv_settings_size
+    
+    def generate(self):
+        self.inputs = random_vectors(self.input_size, 3)
+        self.inputs_tiled = np.tile(self.inputs, (self.lhv_settings_size, 1))
+        
+        self.lhv_1 = random_vectors(self.lhv_settings_size, 3)
+        self.lhv_2 = random_vectors(self.lhv_settings_size, 3)
+        self.lhvs = np.repeat(np.concatenate((self.lhv_1, self.lhv_2), axis=1), self.input_size, axis=0)
+        
+        xarray = np.concatenate((self.inputs_tiled, self.inputs_tiled, self.lhvs), axis=1)
+        self.yarray = self.model.predict(xarray)
+    
+    def create_fitness(self):
+        def fitness(Comm_coefficients):
+            res = 0
+            for i in range(self.lhv_settings_size):
+                probs = np.zeros((self.input_size,2))
+                lhv_1, lhv_2 = self.lhv_1[i], self.lhv_2[i]
+                for j in range(self.input_size):
+                    input = self.inputs[j]
+                    
+                    # Edit here for the true and fitted function
+                    A = np.dot(input, lhv_1)
+                    B = np.dot(input, lhv_2)
+                    bias = Comm_coefficients.value[0] + Comm_coefficients.value[1]*lhv_2[2]*(1-lhv_1[2])
+                    comm = np.heaviside(A+bias,0)*np.heaviside(B+bias,0) + np.heaviside(-A+bias,0)*np.heaviside(-B+bias,0) \
+                        - np.heaviside(A-bias,0)*np.heaviside(-B-bias,0) - np.heaviside(-A-bias,0)*np.heaviside(B-bias,0)
+                    comm = -np.clip(comm,-1,1)
+                    pred = 1/2+1/2*comm
+                    
+                    probs[j,:] = np.array([pred,1-pred])
+            
+                true = self.yarray[i*self.input_size:(i+1)*self.input_size,0]
+                true = np.array([true, 1-true]).transpose()
+                res += KL_distance(true, probs)/(self.input_size)
+            return -res/self.lhv_settings_size
         
         return fitness

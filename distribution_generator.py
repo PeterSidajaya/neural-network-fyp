@@ -69,7 +69,7 @@ def random_joint_vectors(n):
 
 
 def generate_dataset(state, n):
-    """Generate a dataset for the training of the NN by generating n random unit vectors.
+    """DEPRECATED. Generate a dataset for the training of the NN by generating n random unit vectors.
 
     Args:
         state (qt.dm): The two-qubits entangled state
@@ -129,7 +129,7 @@ def generate_dataset(state, n):
 
 
 def generate_dataset_from_vectors(state, a, b):
-    """Generate a dataset for the training of the NN from a list of vectors.
+    """DEPRECATED. Generate a dataset for the training of the NN from a list of vectors.
 
     Args:
         state (qt.dm): The two-qubits entangled state.
@@ -172,6 +172,7 @@ def nme_state(theta):
 
 
 def nme_singlet(theta):
+    """Generate a non-maximally entangled ket state defined by cos(theta)|01> - sin(theta)|10>."""
     a = np.cos(theta)
     b = np.sin(theta)
     return a * qt.tensor(qt.basis(2, 0), qt.basis(2, 1)) - b * qt.tensor(qt.basis(2, 1), qt.basis(2, 0))
@@ -183,7 +184,7 @@ def mixed_separable(p=0.5):
 
 
 def generate_werner(n=8, start=0, end=1, step=10, a=None, b=None):
-    """Generate a series of werner state datasets
+    """DEPRECATED. Generate a series of werner state datasets
     Args:
         n: number of measurements (default 8)
         start: starting werner state parameter (default 0)
@@ -206,7 +207,7 @@ def generate_werner(n=8, start=0, end=1, step=10, a=None, b=None):
 
 
 def generate_mixed(n=8, start=0, end=1, step=10, a=None, b=None):
-    """Generate a series of mixed state datasets.
+    """DEPRECATED. Generate a series of mixed state datasets.
     Keyword arguments:
         n: number of measurements (default 8)
         start: starting mixed state parameter (default 0)
@@ -228,7 +229,7 @@ def generate_mixed(n=8, start=0, end=1, step=10, a=None, b=None):
 
 
 def generate_random_settings(n=8, state_type='max_entangled'):
-    """Generate a dataset for n random measurements of a state"""
+    """DEPRECATED. Generate a dataset for n random measurements of a state"""
     if state_type == 'max_entangled':
         state = qt.ket2dm(nme_state(np.pi/4))
         filename = 'datasets\\dataset_maximally_entangled_state.csv'
@@ -246,7 +247,7 @@ def generate_random_settings(n=8, state_type='max_entangled'):
 
 
 def CHSH_measurements():
-    """Generate vectors for CHSH measurements settings."""
+    """DEPRECATED. Generate vectors for CHSH measurements settings."""
     vec_1 = [0, 0, 1]
     vec_2 = [1, 0, 0]
     vec_3 = [1/np.sqrt(2), 0, 1/np.sqrt(2)]
@@ -258,7 +259,7 @@ def CHSH_measurements():
 
 
 def CHSH_measurements_extended():
-    """Generate vectors for CHSH measurements. Extended to include a mirrored and inverted version."""
+    """DEPRECATED. Generate vectors for CHSH measurements. Extended to include a mirrored and inverted version."""
     vec_a1 = [0, 0, 1]
     vec_a2 = [1, 0, 0]
     vec_b1 = [1/np.sqrt(2), 0, 1/np.sqrt(2)]
@@ -275,7 +276,7 @@ def CHSH_measurements_extended():
 
 
 def maximum_violation_measurements(theta):
-    """Generate 8 pairs of maximally nonlocal (for NME states) measurements."""
+    """DEPRECATED. Generate 8 pairs of maximally nonlocal (for NME states) measurements."""
     kai = np.arccos(1/np.sqrt(1+np.sin(2*theta)**2))
     vec_a1 = [0, 0, 1]
     vec_a2 = [1, 0, 0]
@@ -297,7 +298,7 @@ def maximum_violation_measurements(theta):
 
 
 def maximum_violation_measurements_extended(theta, n=8):
-    """Generate n number of measurements, 8 of which is generated from the
+    """DEPRECATED. Generate n number of measurements, 8 of which is generated from the
     maximum_violation_measurements() function.
 
     Args:
@@ -316,7 +317,7 @@ def maximum_violation_measurements_extended(theta, n=8):
 
 
 def correlated_measurements(theta, n=2):
-    """Create a joint measurements list by combining two lists of n vectors from each party."""
+    """DEPRECATED. Create a joint measurements list by combining two lists of n vectors from each party."""
     kai = np.arccos(1/np.sqrt(1+np.sin(2*theta)**2))
     vec_a1 = [0, 0, 1]
     vec_a2 = [1, 0, 0]
@@ -334,7 +335,7 @@ def correlated_measurements(theta, n=2):
 
 
 def combine_measurements(vec_a_list, vec_b_list):
-    """Combine two lists of measurements, one from each party, into a joint measurement list."""
+    """DEPRECATED. Combine two lists of measurements, one from each party, into a joint measurement list."""
     alice_list = []
     bob_list = []
     for vec_a in vec_a_list:
@@ -345,7 +346,7 @@ def combine_measurements(vec_a_list, vec_b_list):
 
 
 def read_from_vector_dataset(filename):
-    """Reads the vectors from a .csv dataset file containing 3D vectors.
+    """DEPRECATED. Reads the vectors from a .csv dataset file containing 3D vectors.
 
     Args:
         filename (str): The filename containing the vectors

@@ -7,6 +7,7 @@ from mpl_toolkits import mplot3d
 from mpl_toolkits.mplot3d import Axes3D
 from model_testing import *
 
+"""Deprecated. This file was used to make a UI for the program, we abandoned this :)"""
 
 class Interface:
 

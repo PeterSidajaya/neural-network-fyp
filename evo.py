@@ -1,6 +1,12 @@
 import numpy as np
 from abc import ABC, abstractmethod
 
+"""Our genetic evolutionary algorithm is taken from
+https://towardsdatascience.com/an-extensible-evolutionary-algorithm-example-in-python-7372c56a557b
+
+We just extended it for our purposes.
+"""
+
 
 class Individual(ABC):
     def __init__(self, value=None, init_params=None):
@@ -185,4 +191,38 @@ class Bias(Individual):
     
     def _random_init(self, init_params):
         value = np.random.normal(loc=init_params['loc'], scale=init_params['std'])
+        return value
+
+
+class Bias_coefficients(Individual):
+    """
+    Individual for finding the regression for an expression of the bias as a function of the two LHVs.
+    The value is the w,x,y where bias = w + x * lhv_1[2] + y * lhv_2[2].
+    """
+    def mutate(self, mutate_params):
+        self.value = self.value + np.random.normal(scale=mutate_params['std'], size=3)
+    
+    def pair(self, other, pair_params):
+        bias = pair_params['alpha'] * self.value + (1-pair_params['alpha']) * other.value
+        return Bias_coefficients(bias)
+    
+    def _random_init(self, init_params):
+        value = (np.random.normal(loc=init_params['loc'], scale=init_params['std'], size=3))
+        return value
+    
+
+class Comm_coefficients(Individual):
+    """
+    Individual for finding the coefficients for the analytical protocol of the bit of communication.
+    The value is u,v where b_c = u + v(lhv_2[2])(1-lhv_1[2]).
+    """
+    def mutate(self, mutate_params):
+        self.value = self.value + np.random.normal(scale=mutate_params['std'], size=2)
+    
+    def pair(self, other, pair_params):
+        bias = pair_params['alpha'] * self.value + (1-pair_params['alpha']) * other.value
+        return Comm_coefficients(bias)
+    
+    def _random_init(self, init_params):
+        value = (np.random.normal(loc=init_params['loc'], scale=init_params['std'], size=2))
         return value

@@ -2,6 +2,7 @@ import imageio
 import os
 
 def make_gif(figures_path):
+    """A simple function to collate figures into gif."""
     if not os.path.exists(figures_path + '/gif'):
         os.mkdir(figures_path + '/gif')
 

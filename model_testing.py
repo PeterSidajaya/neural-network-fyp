@@ -162,6 +162,10 @@ def map_distr(model, LHV_1, n=4096, type="single vector"):
 
 def plot_comm_distr_vector(distr, type='spherical', color='comm', set_axes=None, savename=None, show=True, vmin=0, vmax=1, title=None):
     """Plot a comm distribution"""
+    plt.rcParams.update({
+        "font.family": "Serif"
+    })
+
     cdata = distr.c
     adata_1 = distr['p_1(a=+1)']
     adata_2 = distr['p_2(a=+1)']
@@ -196,6 +200,13 @@ def plot_comm_distr_vector(distr, type='spherical', color='comm', set_axes=None,
         axes = 'alice'
         vmin, vmax = 0.5, 1.5
 
+    elif color == 'alice_total':
+        c = cdata * (adata_1 - adata_2)
+        axes = 'alice'
+    elif color == 'bob_total':
+        c = cdata * (bdata_1 - bdata_2)
+        axes = 'bob'
+
     if set_axes:
         axes = set_axes
 
@@ -214,9 +225,9 @@ def plot_comm_distr_vector(distr, type='spherical', color='comm', set_axes=None,
         ax.plot([0, l1y[0]*1.25], [0, l1x[0]*1.25], [0, l1z[0]*1.25], 'r-o', linewidth=5)
         ax.plot([0, l2y[0]*1.25], [0, l2x[0]*1.25], [0, l2z[0]*1.25], 'b-o', linewidth=5)
         
-        ax.set_xlabel('y')
-        ax.set_ylabel('x')
-        ax.set_zlabel('z')
+        ax.set_xlabel(R'$y$')
+        ax.set_ylabel(R'$x$')
+        ax.set_zlabel(R'$z$')
         fig.subplots_adjust(right=0.8)
         cbar_ax = fig.add_axes([0.85, 0.15, 0.01, 0.7])
         fig.colorbar(img, cax=cbar_ax)
@@ -228,17 +239,17 @@ def plot_comm_distr_vector(distr, type='spherical', color='comm', set_axes=None,
         phi_data = np.arctan2(ydata, xdata)
         fig = plt.figure()
         ax = fig.add_subplot()
-        img = ax.scatter(phi_data, theta_data, c=c, vmin=vmin, vmax=vmax)
+        img = ax.scatter(phi_data, theta_data, c=c, vmin=vmin, vmax=vmax, cmap='coolwarm')
 
         l1theta = np.arccos(l1z)
         l1phi = np.arctan2(l1y, l1x)
         l2theta = np.arccos(l2z)
         l2phi = np.arctan2(l2y, l2x)
-        ax.scatter(l1phi, l1theta, color='red')
-        ax.scatter(l2phi, l2theta, color='blue')
+        ax.scatter(l1phi, l1theta, color='pink')
+        ax.scatter(l2phi, l2theta, color='cyan')
 
-        ax.set_xlabel('phi', fontsize=22)
-        ax.set_ylabel('theta', fontsize=22)
+        ax.set_xlabel('\u03C6', fontsize=22)
+        ax.set_ylabel('\u03B8', fontsize=22)
         if title:
             ax.set_title(title, fontsize=26)
         fig.subplots_adjust(right=0.8)
@@ -275,9 +286,9 @@ def map_distr_SV_party(model, vec_alice=[0, 0, 1], vec_bob=[0, 0, 1], n=4096):
     return df
 
 
-def evaluate_marginals(model, theta, vec_alice, vec_bob, singlet=True, local=False, strategy=0):
+def evaluate_marginals(model, theta, vec_alice, vec_bob, singlet=True, local=False, strategy=0, LHV_size=5000):
     config.training_size = 1
-    config.LHV_size = 5000
+    config.LHV_size = LHV_size
     xdata = np.array([np.concatenate([vec_alice, vec_bob]), ])
     if not local:
         output = predict(model, xdata)[0]
@@ -412,3 +423,4 @@ def comm_balance(model, vec_alice, vec_bob):
     y_predict = model.predict(x_LHV)
     comms = comm_customLoss_local_distr_multiple(y_predict)[:,-1]
     return np.average(comms)
+

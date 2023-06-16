@@ -13,8 +13,10 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import config
 
+"""This file contains the relevant functions that are used in training the model."""
 
 def create_generator(state, dim=2):
+    """This is the generator used in training. Very important function :)"""
     config.party_outputsize = dim
     num_of_measurement = config.training_size
     LHV_size = config.LHV_size
@@ -41,6 +43,8 @@ def create_generator(state, dim=2):
 
 
 def create_generator_limited(state, alice_set, bob_set, dim=2):
+    """This is a variant of the generator where one needs to supply the set of measurement vectors.
+    Thus, it does not go through the whole Bloch sphere."""
     config.party_outputsize = dim
     num_of_measurement = len(alice_set) * len(bob_set)
     config.training_size = num_of_measurement
@@ -72,6 +76,7 @@ def create_generator_limited(state, alice_set, bob_set, dim=2):
         yield (x, y)
         
 def create_generator_qutrit(state, lhv_type='unit'):
+    """This is the variant of the generator for when we tried qutrit states."""
     config.party_outputsize = 3
     num_of_measurement = config.training_size
     LHV_size = config.LHV_size
@@ -100,6 +105,7 @@ def create_generator_qutrit(state, lhv_type='unit'):
 
 
 def create_generator_qutrit_limited(state, alice_set, bob_set, lhv_type='unit'):
+    """The limited variant of the qutrit generator."""
     config.party_outputsize = 3
     num_of_measurement = len(alice_set) * len(bob_set)
     config.training_size = num_of_measurement
@@ -131,8 +137,7 @@ def create_generator_qutrit_limited(state, alice_set, bob_set, lhv_type='unit'):
 
 
 def train(model, dataset, save=False, save_name=None, lr=None, loss=None, dim=2):
-    """Train a communication model
-    """
+    """The main function used to train a communication model."""
     print("Starting training (with communication)...")
     x, y = open_dataset(dataset, dim=dim)
     data = np.concatenate((x, y), axis=1).astype('float32')
@@ -186,7 +191,7 @@ def train(model, dataset, save=False, save_name=None, lr=None, loss=None, dim=2)
 
 
 def train_generator(model, generator, save=False, save_name=None, lr=None, loss=None, steps=50):
-    """Train a communication model"""
+    """The main function used to train a communication model with a generator. This is the one used for the paper."""
     print("Starting training...")
     LHV_size = config.LHV_size
     training_size = config.training_size

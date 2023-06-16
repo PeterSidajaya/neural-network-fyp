@@ -8,11 +8,11 @@ import config
 from model_testing import *
 from auxiliary import *
 from matplotlib import rcParams
-rcParams['font.family'] = 'serif'
+
+"""This function is used to create the plots that are shown in the appendix of the paper."""
 
 
-
-folder_name = "qubit-pi-4/"
+folder_name = "qubits-new/qubit-pi-4/"
 state = qt.ket2dm(nme_singlet(np.pi/4))
 
 
@@ -58,15 +58,15 @@ for l_sweep, l_fix in [(1, 2), (2, 1)]:
             
             distr = map_distr_TV(model, vec_1, vec_2)
             plot_comm_distr_vector(distr, type=type, color='comm',
-                                savename=parent+'/comm/'+str(i)+'-'+str(j-1)+'comm'+'.png', show=show, title="Bit of communication sent")
+                                savename=parent+'/comm/'+str(i)+'-'+str(j-1)+'comm'+'.png', show=show, title="Communication")
             plot_comm_distr_vector(distr, type=type, color='alice_1',
-                                savename=parent+'/alice-1/'+str(i)+'-'+str(j-1)+'alice-1'+'.png', show=show, title="Alice's first output")
+                                savename=parent+'/alice-1/'+str(i)+'-'+str(j-1)+'alice-1'+'.png', show=show, title="Alice 1")
             plot_comm_distr_vector(distr, type=type, color='alice_2',
-                                savename=parent+'/alice-2/'+str(i)+'-'+str(j-1)+'alice-2'+'.png', show=show, title="Alice's second output")
+                                savename=parent+'/alice-2/'+str(i)+'-'+str(j-1)+'alice-2'+'.png', show=show, title="Alice 2")
             plot_comm_distr_vector(distr, type=type, color='bob_1',
-                                savename=parent+'/bob-1/'+str(i)+'-'+str(j-1)+'bob-1'+'.png', show=show, title="Bob's first output")
+                                savename=parent+'/bob-1/'+str(i)+'-'+str(j-1)+'bob-1'+'.png', show=show, title="Bob 1")
             plot_comm_distr_vector(distr, type=type, color='bob_2',
-                                savename=parent+'/bob-2/'+str(i)+'-'+str(j-1)+'bob-2'+'.png', show=show, title="Bob's second output")
+                                savename=parent+'/bob-2/'+str(i)+'-'+str(j-1)+'bob-2'+'.png', show=show, title="Bob 2")
             plt.close('all')
         make_gif(parent)
 
@@ -89,14 +89,14 @@ for l_sweep, l_fix in [(1, 2), (2, 1)]:
             
             distr = map_distr_TV(model, vec_1, vec_2)
             plot_comm_distr_vector(distr, type=type, color='comm',
-                                savename=parent+'/comm/'+str(i)+'-'+str(j-1)+'comm'+'.png', show=show, title="Bit of communication sent")
+                                savename=parent+'/comm/'+str(i)+'-'+str(j-1)+'comm'+'.png', show=show, title="Communication")
             plot_comm_distr_vector(distr, type=type, color='alice_1',
-                                savename=parent+'/alice-1/'+str(i)+'-'+str(j-1)+'alice-1'+'.png', show=show, title="Alice's first output")
+                                savename=parent+'/alice-1/'+str(i)+'-'+str(j-1)+'alice-1'+'.png', show=show, title="Alice 1")
             plot_comm_distr_vector(distr, type=type, color='alice_2',
-                                savename=parent+'/alice-2/'+str(i)+'-'+str(j-1)+'alice-2'+'.png', show=show, title="Alice's second output")
+                                savename=parent+'/alice-2/'+str(i)+'-'+str(j-1)+'alice-2'+'.png', show=show, title="Alice 2")
             plot_comm_distr_vector(distr, type=type, color='bob_1',
-                                savename=parent+'/bob-1/'+str(i)+'-'+str(j-1)+'bob-1'+'.png', show=show, title="Bob's first output")
+                                savename=parent+'/bob-1/'+str(i)+'-'+str(j-1)+'bob-1'+'.png', show=show, title="Bob 1")
             plot_comm_distr_vector(distr, type=type, color='bob_2',
-                                savename=parent+'/bob-2/'+str(i)+'-'+str(j-1)+'bob-2'+'.png', show=show, title="Bob's second output")
+                                savename=parent+'/bob-2/'+str(i)+'-'+str(j-1)+'bob-2'+'.png', show=show, title="Bob 2")
             plt.close('all')
         make_gif(parent)

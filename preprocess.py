@@ -4,7 +4,8 @@ import random
 import config
 from distribution_generator import random_unit_vector, random_semicircle_vector
 
-"""This file contains all the functions needed to preprocess the datasets.
+"""Mostly deprecated as we do not use datasets anymore, except for the add_LHV function.
+This file contains all the functions needed to preprocess the datasets.
 """
 
 

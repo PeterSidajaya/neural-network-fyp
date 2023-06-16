@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import math
 
-"""This file contains the functions needed to create the datasets."""
+"""DEPRECATED. The same file as distribution_generator.py but with functions for qutrit measurements."""
 
 def random_pure_state(dim):
     U_real = np.matrix(np.random.normal(size=(dim,dim)))

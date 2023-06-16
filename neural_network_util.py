@@ -6,8 +6,7 @@ from tensorflow import keras
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.layers import Dense, Input, Concatenate, Lambda, Dot
 
-"""This file contains all the functions needed to create the Neural Network.
-"""
+"""This file contains all the functions needed to create the Neural Network."""
 
 
 def build_model():

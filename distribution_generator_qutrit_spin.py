@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import math
 
-"""This file contains the functions needed to create the datasets."""
+"""DEPRECATED. The same file as distribution_generator.py but with functions for qutrit spin measurements."""
 
 
 S_x, S_y, S_z = qt.jmat(1)

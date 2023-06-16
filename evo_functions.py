@@ -6,6 +6,7 @@ from numpy import ndarray
 from evo_protocols import *
 rng = default_rng()
 
+"""This file contains random function that are used in the other evo's function."""
 
 def random_vector(n):
     """Generate an uniformly distributed random vector."""

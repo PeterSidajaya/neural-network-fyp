@@ -11,6 +11,8 @@ import pickle
 from distribution_generator import *
 from training import *
 
+"""This runnable file trains a neural network and saves the model, along with the training history."""
+
 folder_name = "qubit-pi-4/"
 
 minimas = []

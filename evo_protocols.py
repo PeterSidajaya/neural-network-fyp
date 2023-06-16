@@ -1,6 +1,8 @@
 # Import the required packages
 import numpy as np
 
+"""Deprecated. Not used in the actual paper."""
+
 def dot(vec_1, vec_2):
     """Dot product for two vectors."""
     return vec_1[0] * vec_2[0] + vec_1[1] * vec_2[1] + vec_1[2] * vec_2[2]
